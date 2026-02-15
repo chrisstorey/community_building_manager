@@ -2,7 +2,7 @@
 from typing import Optional
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthCredentials
+from fastapi.security import HTTPBearer
 
 from app.core.security import decode_token
 from app.db import get_session
@@ -13,7 +13,7 @@ security = HTTPBearer()
 
 
 async def get_current_user(
-    credentials: HTTPAuthCredentials = Depends(security),
+    credentials = Depends(security),
     db: Session = Depends(get_session),
 ) -> User:
     """Get current authenticated user"""

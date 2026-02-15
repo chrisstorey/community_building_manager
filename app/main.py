@@ -17,6 +17,9 @@ from app.models.work import WorkArea, WorkItem, Update  # noqa: F401
 
 # Import API routers
 from app.api.auth import router as auth_router
+from app.api.organizations import router as org_router
+from app.api.asset_types import router as asset_types_router
+from app.api.work_items import router as work_items_router
 
 # Initialize database
 init_db()
@@ -39,6 +42,9 @@ app.add_middleware(
 
 # Include routers
 app.include_router(auth_router)
+app.include_router(org_router)
+app.include_router(asset_types_router)
+app.include_router(work_items_router)
 
 
 @app.get("/health")
