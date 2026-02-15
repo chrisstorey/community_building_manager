@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Community Building Manager{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h1>Organization Dashboard</h1>
+
+    <!-- Statistics Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <div class="card">
+            <div class="card-header">
+                <h3>Outstanding Actions</h3>
+            </div>
+            <div style="text-align: center; padding: 1rem;">
+                <div style="font-size: 2.5rem; font-weight: bold; color: var(--action);" id="outstanding-count">-</div>
+                <p style="margin: 0.5rem 0 0 0; color: var(--text-light);">Items requiring attention</p>
+                <a href="#outstanding-items" class="btn btn-action" style="margin-top: 1rem;">View Details</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Due Next 30 Days</h3>
+            </div>
+            <div style="text-align: center; padding: 1rem;">
+                <div style="font-size: 2.5rem; font-weight: bold; color: var(--action);" id="due-count">-</div>
+                <p style="margin: 0.5rem 0 0 0; color: var(--text-light);">Scheduled reviews</p>
+                <a href="#due-items" class="btn btn-action" style="margin-top: 1rem;">View Details</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Total Items</h3>
+            </div>
+            <div style="text-align: center; padding: 1rem;">
+                <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary);" id="total-count">-</div>
+                <p style="margin: 0.5rem 0 0 0; color: var(--text-light);">Maintenance items</p>
+                <a href="/locations" class="btn btn-primary" style="margin-top: 1rem;">Manage</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Outstanding Items -->
+    <div class="card" id="outstanding-items-section">
+        <div class="card-header">
+            <h3>Outstanding Actions</h3>
+        </div>
+        <div id="outstanding-items">
+            <p style="text-align: center; color: var(--text-light);">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Due Soon Items -->
+    <div class="card" style="margin-top: 2rem;" id="due-items-section">
+        <div class="card-header">
+            <h3>Due for Review Soon</h3>
+        </div>
+        <div id="due-items">
+            <p style="text-align: center; color: var(--text-light);">Loading...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadDashboard() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+
+        try {
+            // Get organization ID from current user
+            const userOrgId = await getCurrentUserOrgId();
+
+            // Load statistics
+            const statsResp = await fetch(`/dashboard/stats/${userOrgId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const stats = await statsResp.json();
+
+            document.getElementById('outstanding-count').textContent = stats.outstanding_count;
+            document.getElementById('due-count').textContent = stats.due_next_month_count;
+            document.getElementById('total-count').textContent = stats.total_items;
+
+            // Load outstanding items
+            const outstandingResp = await fetch(`/dashboard/outstanding/${userOrgId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const outstanding = await outstandingResp.json();
+            displayOutstandingItems(outstanding);
+
+            // Load due items
+            const dueResp = await fetch(`/dashboard/due-soon/${userOrgId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const due = await dueResp.json();
+            displayDueItems(due);
+
+        } catch (error) {
+            console.error('Error loading dashboard:', error);
+            document.querySelector('.dashboard-container').innerHTML = `<div class="alert alert-danger">Error loading dashboard. Please refresh the page.</div>`;
+        }
+    }
+
+    async function getCurrentUserOrgId() {
+        // This would typically be stored after login
+        // For now, we'll get it from an API endpoint
+        const token = localStorage.getItem('access_token');
+        const resp = await fetch('/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const user = await resp.json();
+        return user.organization_id;
+    }
+
+    function displayOutstandingItems(items) {
+        const container = document.getElementById('outstanding-items');
+        if (items.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: var(--success);">✓ No outstanding items!</p>';
+            return;
+        }
+
+        let html = '<table class="table">';
+        html += '<thead><tr><th>Item</th><th>Location</th><th>Area</th><th>Days Since Update</th></tr></thead><tbody>';
+        items.forEach(item => {
+            html += `<tr>
+                <td>${item.statement}</td>
+                <td>${item.location_name}</td>
+                <td>${item.work_area_statement}</td>
+                <td>${item.days_since_update || 'N/A'} days</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function displayDueItems(items) {
+        const container = document.getElementById('due-items');
+        if (items.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: var(--success);">✓ No items due soon!</p>';
+            return;
+        }
+
+        let html = '<table class="table">';
+        html += '<thead><tr><th>Item</th><th>Location</th><th>Area</th><th>Days Since Update</th></tr></thead><tbody>';
+        items.forEach(item => {
+            html += `<tr>
+                <td>${item.statement}</td>
+                <td>${item.location_name}</td>
+                <td>${item.work_area_statement}</td>
+                <td>${item.days_since_update || 'N/A'} days</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    // Load dashboard when page loads
+    window.addEventListener('load', loadDashboard);
+</script>
+{% endblock %}
