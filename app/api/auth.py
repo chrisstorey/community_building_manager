@@ -6,7 +6,9 @@ from sqlalchemy.orm import Session
 from app.db import get_session
 from app.schemas.auth import LoginRequest, TokenResponse, UserResponse, UserCreate
 from app.core.security import verify_password, create_access_token
+from app.core.dependencies import get_current_user
 from app.services.user_service import get_user_by_email, create_user
+from app.models.user import User
 from app.config import settings
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -55,3 +57,11 @@ def register(
 
     db_user = create_user(db, user)
     return db_user
+
+
+@router.get("/me", response_model=UserResponse)
+def get_me(
+    current_user: User = Depends(get_current_user),
+):
+    """Get current user information"""
+    return current_user
