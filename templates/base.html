@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Community Building Manager{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/brand.css">
+    <script src="/static/js/api.js"></script>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center;">
+            <div class="navbar-brand">Community Building Manager</div>
+            <div>
+                <a href="/dashboard" class="nav-link">Dashboard</a>
+                <a href="/locations" class="nav-link">Locations</a>
+                <a href="/work-items" class="nav-link">Work Items</a>
+                <a href="/settings" class="nav-link">Settings</a>
+                <button onclick="logout()" class="btn btn-outline" style="margin-left: 1rem;">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <main id="main-content" style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem;">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer style="background-color: var(--primary); color: white; text-align: center; padding: 1rem; margin-top: 2rem;">
+        <p>&copy; 2026 Community Building Manager. All rights reserved.</p>
+    </footer>
+
+    <script>
+        async function logout() {
+            localStorage.removeItem('access_token');
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>

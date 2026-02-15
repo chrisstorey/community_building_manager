@@ -13,4 +13,5 @@ def test_root_endpoint(client):
     """Test root endpoint"""
     response = client.get("/")
     assert response.status_code == 200
-    assert "Community Building Manager API" in response.json()["message"]
+    # Should serve login page (HTML)
+    assert "Community Building Manager" in response.text or "login" in response.text.lower()
