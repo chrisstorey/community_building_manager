@@ -1,5 +1,5 @@
 """Work area and work item schemas"""
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 
@@ -17,8 +17,7 @@ class UpdateResponse(UpdateCreate):
     user_id: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkItemBase(BaseModel):
@@ -40,8 +39,7 @@ class WorkItemResponse(WorkItemBase):
     updated_at: datetime
     updates: List[UpdateResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WorkAreaBase(BaseModel):
@@ -63,5 +61,4 @@ class WorkAreaResponse(WorkAreaBase):
     updated_at: datetime
     items: List[WorkItemResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

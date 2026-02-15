@@ -1,5 +1,5 @@
 """Organization and Location schemas"""
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 
@@ -16,8 +16,7 @@ class KeyContactResponse(KeyContactCreate):
     """Key contact response schema"""
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class OrganizationBase(BaseModel):
@@ -45,8 +44,7 @@ class OrganizationResponse(OrganizationBase):
     updated_at: datetime
     key_contacts: List[KeyContactResponse] = []
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LocationBase(BaseModel):
@@ -73,8 +71,7 @@ class LocationResponse(LocationBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LocationTypeBase(BaseModel):
@@ -93,5 +90,4 @@ class LocationTypeResponse(LocationTypeBase):
     """Location type response schema"""
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
