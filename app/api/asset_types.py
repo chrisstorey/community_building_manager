@@ -1,9 +1,10 @@
 """Asset type management routes"""
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlmodel import Session, select
 
 from app.db import get_session
 from app.models.user import User
+from app.models.organization import LocationType
 from app.core.dependencies import get_admin_user, get_current_user
 from app.schemas.organization import LocationTypeCreate, LocationTypeResponse
 from app.services.organization_service import (
@@ -23,8 +24,8 @@ def create_asset_type(
 ):
     """Create a new asset type with markdown template"""
     # Check for unique name
-    existing = db.query(LocationTypeResponse).filter(
-        LocationTypeResponse.name == asset_type.name
+    existing = db.exec(
+        select(LocationType).where(LocationType.name == asset_type.name)
     ).first()
     if existing:
         raise HTTPException(

@@ -1,54 +1,56 @@
 """Work area and work item models"""
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
-from sqlalchemy.orm import relationship
-from datetime import datetime
-
-from app.db.base import Base
+from typing import Optional
+from sqlmodel import SQLModel, Field, Relationship
+from datetime import datetime, timezone
 
 
-class WorkArea(Base):
+def _now_utc() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+class WorkArea(SQLModel, table=True):
     """Work area - represents a category of maintenance items for an asset"""
     __tablename__ = "work_areas"
 
-    id = Column(Integer, primary_key=True, index=True)
-    asset_id = Column(Integer, ForeignKey("location_assets.id"), nullable=False)
-    statement = Column(Text, nullable=False)
-    is_relevant = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id: int | None = Field(default=None, primary_key=True)
+    asset_id: int = Field(foreign_key="location_assets.id")
+    statement: str
+    is_relevant: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=_now_utc)
+    updated_at: datetime = Field(default_factory=_now_utc)
 
     # Relationships
-    asset = relationship("LocationAsset", back_populates="work_areas")
-    items = relationship("WorkItem", back_populates="work_area")
+    asset: Optional["LocationAsset"] = Relationship(back_populates="work_areas")
+    items: list["WorkItem"] = Relationship(back_populates="work_area")
 
 
-class WorkItem(Base):
+class WorkItem(SQLModel, table=True):
     """Work item - represents a specific maintenance task"""
     __tablename__ = "work_items"
 
-    id = Column(Integer, primary_key=True, index=True)
-    work_area_id = Column(Integer, ForeignKey("work_areas.id"), nullable=False)
-    statement = Column(String(255), nullable=False)
-    description = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id: int | None = Field(default=None, primary_key=True)
+    work_area_id: int = Field(foreign_key="work_areas.id")
+    statement: str = Field(max_length=255)
+    description: str | None = Field(default=None)
+    created_at: datetime = Field(default_factory=_now_utc)
+    updated_at: datetime = Field(default_factory=_now_utc)
 
     # Relationships
-    work_area = relationship("WorkArea", back_populates="items")
-    updates = relationship("Update", back_populates="work_item")
+    work_area: Optional[WorkArea] = Relationship(back_populates="items")
+    updates: list["Update"] = Relationship(back_populates="work_item")
 
 
-class Update(Base):
+class Update(SQLModel, table=True):
     """Update - represents a progress update on a work item"""
     __tablename__ = "updates"
 
-    id = Column(Integer, primary_key=True, index=True)
-    work_item_id = Column(Integer, ForeignKey("work_items.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    narrative = Column(Text, nullable=False)
-    review_date = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id: int | None = Field(default=None, primary_key=True)
+    work_item_id: int = Field(foreign_key="work_items.id")
+    user_id: int = Field(foreign_key="users.id")
+    narrative: str
+    review_date: datetime | None = Field(default=None)
+    created_at: datetime = Field(default_factory=_now_utc)
 
     # Relationships
-    work_item = relationship("WorkItem", back_populates="updates")
-    user = relationship("User", back_populates="updates")
+    work_item: Optional[WorkItem] = Relationship(back_populates="updates")
+    user: Optional["User"] = Relationship(back_populates="updates")

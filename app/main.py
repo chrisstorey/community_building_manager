@@ -7,7 +7,7 @@ from pathlib import Path
 from app.config import settings
 from app.db import init_db
 
-# Import all models to register them with Base
+# Import all models to register them with SQLModel metadata
 from app.models.user import User  # noqa: F401
 from app.models.organization import (  # noqa: F401
     Organization,

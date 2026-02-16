@@ -1,30 +1,28 @@
 """Work area and work item schemas"""
 from pydantic import BaseModel
-from typing import Optional, List
 from datetime import datetime
 
 
 class UpdateCreate(BaseModel):
     """Update creation schema"""
     narrative: str
-    review_date: Optional[datetime] = None
+    review_date: datetime | None = None
 
 
 class UpdateResponse(UpdateCreate):
     """Update response schema"""
+    model_config = {"from_attributes": True}
+
     id: int
     work_item_id: int
     user_id: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class WorkItemBase(BaseModel):
     """Base work item schema"""
     statement: str
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class WorkItemCreate(WorkItemBase):
@@ -34,14 +32,13 @@ class WorkItemCreate(WorkItemBase):
 
 class WorkItemResponse(WorkItemBase):
     """Work item response schema"""
+    model_config = {"from_attributes": True}
+
     id: int
     work_area_id: int
     created_at: datetime
     updated_at: datetime
-    updates: List[UpdateResponse] = []
-
-    class Config:
-        from_attributes = True
+    updates: list[UpdateResponse] = []
 
 
 class WorkAreaBase(BaseModel):
@@ -57,11 +54,10 @@ class WorkAreaCreate(WorkAreaBase):
 
 class WorkAreaResponse(WorkAreaBase):
     """Work area response schema"""
+    model_config = {"from_attributes": True}
+
     id: int
     asset_id: int
     created_at: datetime
     updated_at: datetime
-    items: List[WorkItemResponse] = []
-
-    class Config:
-        from_attributes = True
+    items: list[WorkItemResponse] = []

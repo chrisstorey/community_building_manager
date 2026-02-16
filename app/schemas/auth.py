@@ -1,6 +1,5 @@
 """Authentication schemas"""
 from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
 
 from app.models.user import UserRole
@@ -9,7 +8,7 @@ from app.models.user import UserRole
 class UserBase(BaseModel):
     """Base user schema"""
     email: str
-    full_name: Optional[str] = None
+    full_name: str | None = None
     role: UserRole = UserRole.VIEWER
 
 
@@ -21,20 +20,19 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     """User update schema"""
-    full_name: Optional[str] = None
-    role: Optional[UserRole] = None
+    full_name: str | None = None
+    role: UserRole | None = None
 
 
 class UserResponse(UserBase):
     """User response schema"""
+    model_config = {"from_attributes": True}
+
     id: int
     is_active: bool
     organization_id: int
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class TokenResponse(BaseModel):

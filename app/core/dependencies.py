@@ -1,6 +1,5 @@
 """FastAPI dependencies"""
-from typing import Optional
-from sqlalchemy.orm import Session
+from sqlmodel import Session
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 
@@ -13,7 +12,7 @@ security = HTTPBearer()
 
 
 async def get_current_user(
-    credentials = Depends(security),
+    credentials=Depends(security),
     db: Session = Depends(get_session),
 ) -> User:
     """Get current authenticated user"""

@@ -1,89 +1,96 @@
 """Organization and Location models"""
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
-from sqlalchemy.orm import relationship
-from datetime import datetime
-
-from app.db.base import Base
+from typing import Optional
+from sqlmodel import SQLModel, Field, Relationship
+from datetime import datetime, timezone
 
 
-class Organization(Base):
+def _now_utc() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+class Organization(SQLModel, table=True):
     """Organization model - represents a community organization"""
     __tablename__ = "organizations"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False)
-    address = Column(Text, nullable=True)
-    parent_organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(max_length=255)
+    address: str | None = Field(default=None)
+    parent_organization_id: int | None = Field(
+        default=None, foreign_key="organizations.id"
+    )
+    created_at: datetime = Field(default_factory=_now_utc)
+    updated_at: datetime = Field(default_factory=_now_utc)
 
     # Relationships
-    users = relationship("User", back_populates="organization")
-    locations = relationship("Location", back_populates="organization")
-    child_organizations = relationship(
-        "Organization",
-        remote_side=[id],
-        backref="parent_organization"
+    users: list["User"] = Relationship(back_populates="organization")
+    locations: list["Location"] = Relationship(back_populates="organization")
+    key_contacts: list["KeyContact"] = Relationship(back_populates="organization")
+    child_organizations: list["Organization"] = Relationship(
+        back_populates="parent_organization",
+        sa_relationship_kwargs={"remote_side": "Organization.id"},
     )
-    key_contacts = relationship("KeyContact", back_populates="organization")
+    parent_organization: Optional["Organization"] = Relationship(
+        back_populates="child_organizations",
+        sa_relationship_kwargs={"remote_side": "Organization.parent_organization_id"},
+    )
 
 
-class KeyContact(Base):
+class KeyContact(SQLModel, table=True):
     """Key contact for an organization"""
     __tablename__ = "key_contacts"
 
-    id = Column(Integer, primary_key=True, index=True)
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
-    name = Column(String(255), nullable=False)
-    title = Column(String(255), nullable=True)
-    email = Column(String(255), nullable=True)
-    phone = Column(String(20), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id: int | None = Field(default=None, primary_key=True)
+    organization_id: int = Field(foreign_key="organizations.id")
+    name: str = Field(max_length=255)
+    title: str | None = Field(default=None, max_length=255)
+    email: str | None = Field(default=None, max_length=255)
+    phone: str | None = Field(default=None, max_length=20)
+    created_at: datetime = Field(default_factory=_now_utc)
 
     # Relationships
-    organization = relationship("Organization", back_populates="key_contacts")
+    organization: Optional[Organization] = Relationship(back_populates="key_contacts")
 
 
-class LocationType(Base):
+class LocationType(SQLModel, table=True):
     """Asset types that can be assigned to locations"""
     __tablename__ = "location_types"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), unique=True, nullable=False)
-    description = Column(Text, nullable=True)
-    template = Column(Text, nullable=False)  # Markdown template
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(max_length=255, unique=True)
+    description: str | None = Field(default=None)
+    template: str  # Markdown template
 
     # Relationships
-    location_assets = relationship("LocationAsset", back_populates="asset_type")
+    location_assets: list["LocationAsset"] = Relationship(back_populates="asset_type")
 
 
-class Location(Base):
+class Location(SQLModel, table=True):
     """Location model - represents a physical location within an organization"""
     __tablename__ = "locations"
 
-    id = Column(Integer, primary_key=True, index=True)
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False)
-    name = Column(String(255), nullable=False)
-    address = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id: int | None = Field(default=None, primary_key=True)
+    organization_id: int = Field(foreign_key="organizations.id")
+    name: str = Field(max_length=255)
+    address: str
+    created_at: datetime = Field(default_factory=_now_utc)
+    updated_at: datetime = Field(default_factory=_now_utc)
 
     # Relationships
-    organization = relationship("Organization", back_populates="locations")
-    assets = relationship("LocationAsset", back_populates="location")
+    organization: Optional[Organization] = Relationship(back_populates="locations")
+    assets: list["LocationAsset"] = Relationship(back_populates="location")
 
 
-class LocationAsset(Base):
+class LocationAsset(SQLModel, table=True):
     """An asset instance assigned to a location"""
     __tablename__ = "location_assets"
 
-    id = Column(Integer, primary_key=True, index=True)
-    location_id = Column(Integer, ForeignKey("locations.id"), nullable=False)
-    asset_type_id = Column(Integer, ForeignKey("location_types.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id: int | None = Field(default=None, primary_key=True)
+    location_id: int = Field(foreign_key="locations.id")
+    asset_type_id: int = Field(foreign_key="location_types.id")
+    created_at: datetime = Field(default_factory=_now_utc)
+    updated_at: datetime = Field(default_factory=_now_utc)
 
     # Relationships
-    location = relationship("Location", back_populates="assets")
-    asset_type = relationship("LocationType", back_populates="location_assets")
-    work_areas = relationship("WorkArea", back_populates="asset")
+    location: Optional[Location] = Relationship(back_populates="assets")
+    asset_type: Optional[LocationType] = Relationship(back_populates="location_assets")
+    work_areas: list["WorkArea"] = Relationship(back_populates="asset")

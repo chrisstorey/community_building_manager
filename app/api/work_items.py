@@ -1,7 +1,6 @@
 """Work items and work areas routes"""
-from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlmodel import Session
 
 from app.db import get_session
 from app.models.user import User
