@@ -1,30 +1,28 @@
 """Organization and Location schemas"""
 from pydantic import BaseModel
-from typing import Optional, List
 from datetime import datetime
 
 
 class KeyContactCreate(BaseModel):
     """Key contact creation schema"""
     name: str
-    title: Optional[str] = None
-    email: Optional[str] = None
-    phone: Optional[str] = None
+    title: str | None = None
+    email: str | None = None
+    phone: str | None = None
 
 
 class KeyContactResponse(KeyContactCreate):
     """Key contact response schema"""
-    id: int
+    model_config = {"from_attributes": True}
 
-    class Config:
-        from_attributes = True
+    id: int
 
 
 class OrganizationBase(BaseModel):
     """Base organization schema"""
     name: str
-    address: Optional[str] = None
-    parent_organization_id: Optional[int] = None
+    address: str | None = None
+    parent_organization_id: int | None = None
 
 
 class OrganizationCreate(OrganizationBase):
@@ -34,19 +32,18 @@ class OrganizationCreate(OrganizationBase):
 
 class OrganizationUpdate(BaseModel):
     """Organization update schema"""
-    name: Optional[str] = None
-    address: Optional[str] = None
+    name: str | None = None
+    address: str | None = None
 
 
 class OrganizationResponse(OrganizationBase):
     """Organization response schema"""
+    model_config = {"from_attributes": True}
+
     id: int
     created_at: datetime
     updated_at: datetime
-    key_contacts: List[KeyContactResponse] = []
-
-    class Config:
-        from_attributes = True
+    key_contacts: list[KeyContactResponse] = []
 
 
 class LocationBase(BaseModel):
@@ -62,25 +59,24 @@ class LocationCreate(LocationBase):
 
 class LocationUpdate(BaseModel):
     """Location update schema"""
-    name: Optional[str] = None
-    address: Optional[str] = None
+    name: str | None = None
+    address: str | None = None
 
 
 class LocationResponse(LocationBase):
     """Location response schema"""
+    model_config = {"from_attributes": True}
+
     id: int
     organization_id: int
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class LocationTypeBase(BaseModel):
     """Base location type schema"""
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     template: str
 
 
@@ -91,7 +87,6 @@ class LocationTypeCreate(LocationTypeBase):
 
 class LocationTypeResponse(LocationTypeBase):
     """Location type response schema"""
-    id: int
+    model_config = {"from_attributes": True}
 
-    class Config:
-        from_attributes = True
+    id: int

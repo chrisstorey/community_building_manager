@@ -1,5 +1,5 @@
 """User management service"""
-from sqlalchemy.orm import Session
+from sqlmodel import Session, select
 from app.models.user import User
 from app.schemas.auth import UserCreate, UserUpdate
 from app.core.security import get_password_hash
@@ -22,12 +22,12 @@ def create_user(db: Session, user: UserCreate) -> User:
 
 def get_user_by_email(db: Session, email: str) -> User | None:
     """Get user by email"""
-    return db.query(User).filter(User.email == email).first()
+    return db.exec(select(User).where(User.email == email)).first()
 
 
 def get_user_by_id(db: Session, user_id: int) -> User | None:
     """Get user by ID"""
-    return db.query(User).filter(User.id == user_id).first()
+    return db.get(User, user_id)
 
 
 def update_user(db: Session, user_id: int, user_update: UserUpdate) -> User | None:
@@ -37,8 +37,7 @@ def update_user(db: Session, user_id: int, user_update: UserUpdate) -> User | No
         return None
 
     update_data = user_update.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(db_user, field, value)
+    db_user.sqlmodel_update(update_data)
 
     db.add(db_user)
     db.commit()

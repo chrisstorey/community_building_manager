@@ -1,6 +1,6 @@
 """Tests for authentication"""
 import pytest
-from sqlalchemy.orm import Session
+from sqlmodel import Session
 
 from app.models.user import User, UserRole
 from app.models.organization import Organization

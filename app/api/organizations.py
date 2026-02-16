@@ -1,6 +1,6 @@
 """Organization and Location management routes"""
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlmodel import Session
 
 from app.db import get_session
 from app.models.user import User
@@ -12,8 +12,6 @@ from app.schemas.organization import (
     LocationCreate,
     LocationResponse,
     LocationUpdate,
-    LocationTypeCreate,
-    LocationTypeResponse,
 )
 from app.services.organization_service import (
     create_organization,
@@ -23,9 +21,7 @@ from app.services.organization_service import (
     get_location_by_id,
     get_locations_for_organization,
     update_location,
-    create_location_type,
     get_location_type_by_id,
-    get_all_location_types,
     add_asset_to_location,
 )
 

@@ -26,10 +26,11 @@ class Settings(BaseSettings):
     port: int = 8000
     reload: bool = True
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": False,
+    }
 
 
 settings = Settings()

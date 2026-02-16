@@ -1,7 +1,7 @@
 """Authentication routes"""
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlmodel import Session
 
 from app.db import get_session
 from app.schemas.auth import LoginRequest, TokenResponse, UserResponse, UserCreate

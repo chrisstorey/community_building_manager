@@ -1,9 +1,9 @@
 """Work area and work item service"""
-from sqlalchemy.orm import Session
+from sqlmodel import Session, select
+from sqlalchemy import and_, or_
 from app.models.work import WorkArea, WorkItem, Update
-from app.models.organization import LocationAsset, LocationType
-from app.schemas.work import WorkAreaCreate, WorkItemCreate, UpdateCreate
-from datetime import datetime
+from app.models.organization import LocationAsset, Location
+from datetime import datetime, timezone
 
 
 def parse_markdown_template(template: str) -> list[tuple[str, list[str]]]:
@@ -77,12 +77,12 @@ def generate_work_items_from_template(
 
 def get_work_areas_for_asset(db: Session, asset_id: int) -> list[WorkArea]:
     """Get all work areas for an asset"""
-    return db.query(WorkArea).filter(WorkArea.asset_id == asset_id).all()
+    return list(db.exec(select(WorkArea).where(WorkArea.asset_id == asset_id)).all())
 
 
 def get_work_area_by_id(db: Session, area_id: int) -> WorkArea | None:
     """Get work area by ID"""
-    return db.query(WorkArea).filter(WorkArea.id == area_id).first()
+    return db.get(WorkArea, area_id)
 
 
 def update_work_area_relevance(
@@ -102,12 +102,12 @@ def update_work_area_relevance(
 
 def get_work_items_for_area(db: Session, area_id: int) -> list[WorkItem]:
     """Get all work items for a work area"""
-    return db.query(WorkItem).filter(WorkItem.work_area_id == area_id).all()
+    return list(db.exec(select(WorkItem).where(WorkItem.work_area_id == area_id)).all())
 
 
 def get_work_item_by_id(db: Session, item_id: int) -> WorkItem | None:
     """Get work item by ID"""
-    return db.query(WorkItem).filter(WorkItem.id == item_id).first()
+    return db.get(WorkItem, item_id)
 
 
 def add_update_to_item(
@@ -132,27 +132,27 @@ def add_update_to_item(
 
 def get_updates_for_item(db: Session, item_id: int) -> list[Update]:
     """Get all updates for a work item"""
-    return db.query(Update).filter(Update.work_item_id == item_id).all()
+    return list(db.exec(select(Update).where(Update.work_item_id == item_id)).all())
 
 
 def get_outstanding_items(db: Session, org_id: int) -> list[WorkItem]:
     """Get outstanding work items (items without recent updates) for an organization"""
-    # This is a simplified version - items without updates in the last review period
-    from sqlalchemy import and_, or_
+    now = datetime.now(timezone.utc)
 
     # Get items where there are no updates or the last update review date has passed
-    outstanding = (
-        db.query(WorkItem)
-        .join(WorkArea)
-        .join(LocationAsset)
-        .join("location")
-        .filter(LocationAsset.location.organization_id == org_id)
-        .filter(
-            or_(
-                ~WorkItem.updates.any(),
-                WorkItem.updates.any(Update.review_date < datetime.utcnow()),
+    outstanding = list(
+        db.exec(
+            select(WorkItem)
+            .join(WorkArea)
+            .join(LocationAsset)
+            .join(Location, LocationAsset.location_id == Location.id)
+            .where(Location.organization_id == org_id)
+            .where(
+                or_(
+                    ~WorkItem.updates.any(),
+                    WorkItem.updates.any(Update.review_date < now),
+                )
             )
-        )
-        .all()
+        ).all()
     )
     return outstanding

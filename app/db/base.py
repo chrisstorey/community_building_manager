@@ -1,14 +1,11 @@
 """
 Database abstraction layer - supports SQLite and PostgreSQL.
+Uses SQLModel for unified ORM + schema definitions.
 """
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.engine import Engine
 
 from app.config import settings
-
-# Create base class for all models
-Base = declarative_base()
 
 
 def get_database_url() -> str:
@@ -28,20 +25,16 @@ def create_db_engine() -> Engine:
     return create_engine(url, pool_pre_ping=True)
 
 
-# Create engine and session factory
+# Create engine
 engine = create_db_engine()
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def get_session():
     """Dependency for getting database session."""
-    session = SessionLocal()
-    try:
+    with Session(engine) as session:
         yield session
-    finally:
-        session.close()
 
 
 def init_db():
     """Initialize database - create all tables."""
-    Base.metadata.create_all(bind=engine)
+    SQLModel.metadata.create_all(engine)

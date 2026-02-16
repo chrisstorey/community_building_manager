@@ -1,5 +1,5 @@
 """Organization management service"""
-from sqlalchemy.orm import Session
+from sqlmodel import Session, select
 from app.models.organization import Organization, Location, LocationType, LocationAsset
 from app.schemas.organization import (
     OrganizationCreate,
@@ -21,12 +21,12 @@ def create_organization(db: Session, org: OrganizationCreate) -> Organization:
 
 def get_organization_by_id(db: Session, org_id: int) -> Organization | None:
     """Get organization by ID"""
-    return db.query(Organization).filter(Organization.id == org_id).first()
+    return db.get(Organization, org_id)
 
 
 def get_organizations(db: Session, skip: int = 0, limit: int = 100) -> list[Organization]:
     """Get all organizations with pagination"""
-    return db.query(Organization).offset(skip).limit(limit).all()
+    return list(db.exec(select(Organization).offset(skip).limit(limit)).all())
 
 
 def update_organization(
@@ -38,8 +38,7 @@ def update_organization(
         return None
 
     update_data = org_update.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(db_org, field, value)
+    db_org.sqlmodel_update(update_data)
 
     db.add(db_org)
     db.commit()
@@ -58,19 +57,20 @@ def create_location(db: Session, location: LocationCreate) -> Location:
 
 def get_location_by_id(db: Session, location_id: int) -> Location | None:
     """Get location by ID"""
-    return db.query(Location).filter(Location.id == location_id).first()
+    return db.get(Location, location_id)
 
 
 def get_locations_for_organization(
     db: Session, org_id: int, skip: int = 0, limit: int = 100
 ) -> list[Location]:
     """Get all locations for an organization"""
-    return (
-        db.query(Location)
-        .filter(Location.organization_id == org_id)
-        .offset(skip)
-        .limit(limit)
-        .all()
+    return list(
+        db.exec(
+            select(Location)
+            .where(Location.organization_id == org_id)
+            .offset(skip)
+            .limit(limit)
+        ).all()
     )
 
 
@@ -83,8 +83,7 @@ def update_location(
         return None
 
     update_data = location_update.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(db_location, field, value)
+    db_location.sqlmodel_update(update_data)
 
     db.add(db_location)
     db.commit()
@@ -103,14 +102,14 @@ def create_location_type(db: Session, loc_type: LocationTypeCreate) -> LocationT
 
 def get_location_type_by_id(db: Session, type_id: int) -> LocationType | None:
     """Get location type by ID"""
-    return db.query(LocationType).filter(LocationType.id == type_id).first()
+    return db.get(LocationType, type_id)
 
 
 def get_all_location_types(
     db: Session, skip: int = 0, limit: int = 100
 ) -> list[LocationType]:
     """Get all location types"""
-    return db.query(LocationType).offset(skip).limit(limit).all()
+    return list(db.exec(select(LocationType).offset(skip).limit(limit)).all())
 
 
 def add_asset_to_location(
