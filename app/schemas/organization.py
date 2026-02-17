@@ -18,6 +18,17 @@ class KeyContactResponse(KeyContactCreate):
     id: int
 
 
+class LocationAssetResponse(BaseModel):
+    """Location asset response schema"""
+    model_config = {"from_attributes": True}
+
+    id: int
+    location_id: int
+    asset_type_id: int
+    created_at: datetime
+    updated_at: datetime
+
+
 class OrganizationBase(BaseModel):
     """Base organization schema"""
     name: str
@@ -63,6 +74,11 @@ class LocationBase(BaseModel):
 class LocationCreate(LocationBase):
     """Location creation schema"""
     organization_id: int
+
+
+class LocationCreateRequest(LocationBase):
+    """Location creation request schema"""
+    pass
 
 
 class LocationUpdate(BaseModel):

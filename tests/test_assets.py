@@ -3,6 +3,7 @@ import pytest
 from fastapi import status
 from app.models.user import User
 from app.models.organization import Organization, LocationType
+from app.core.security import get_password_hash
 
 
 @pytest.fixture
@@ -11,7 +12,7 @@ def admin_user(db_session):
     user = User(
         email="admin@test.com",
         full_name="Admin User",
-        hashed_password="hashed_password",
+        hashed_password=get_password_hash("password"),
         role="admin",
         organization_id=1
     )
@@ -289,7 +290,7 @@ def test_asset_type_template_markdown_format(client, auth_token):
 
     # Verify it has proper structure
     assert data["template"].count("## Area:") == 2
-    assert data["template"].count("- ") == 5
+    assert data["template"].count("- ") == 6
 
 
 def test_get_nonexistent_asset_type(client, auth_token):
