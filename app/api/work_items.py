@@ -10,6 +10,8 @@ from app.schemas.work import (
     WorkItemResponse,
     UpdateCreate,
     UpdateResponse,
+    WorkAreaCreate,
+    WorkItemCreate,
 )
 from app.services.work_service import (
     get_work_areas_for_asset,
@@ -19,9 +21,24 @@ from app.services.work_service import (
     get_work_item_by_id,
     add_update_to_item,
     get_updates_for_item,
+    create_work_area,
+    create_work_item,
 )
 
 router = APIRouter(prefix="/work", tags=["work-items"])
+
+
+@router.post("/assets/{asset_id}/areas", response_model=WorkAreaResponse, status_code=status.HTTP_201_CREATED)
+def add_work_area(
+    asset_id: int,
+    area_data: WorkAreaCreate,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_manager_user),
+):
+    """Add a work area to an asset"""
+    # Override asset_id from URL
+    area_data.asset_id = asset_id
+    return create_work_area(db, area_data)
 
 
 @router.get("/assets/{asset_id}/areas", response_model=list[WorkAreaResponse])
@@ -64,6 +81,19 @@ def set_area_relevance(
             status_code=status.HTTP_404_NOT_FOUND, detail="Work area not found"
         )
     return area
+
+
+@router.post("/areas/{area_id}/items", response_model=WorkItemResponse, status_code=status.HTTP_201_CREATED)
+def add_work_item(
+    area_id: int,
+    item_data: WorkItemCreate,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_manager_user),
+):
+    """Add a work item to a work area"""
+    # Override work_area_id from URL
+    item_data.work_area_id = area_id
+    return create_work_item(db, item_data)
 
 
 @router.get("/areas/{area_id}/items", response_model=list[WorkItemResponse])
