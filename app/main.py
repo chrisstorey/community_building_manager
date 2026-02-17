@@ -68,6 +68,12 @@ def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
 
+@app.get("/register")
+def register_page(request: Request):
+    """Serve registration page"""
+    return templates.TemplateResponse("register.html", {"request": request})
+
+
 @app.get("/dashboard")
 def dashboard_page(request: Request):
     """Serve dashboard page"""
