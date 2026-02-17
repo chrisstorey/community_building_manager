@@ -1,5 +1,5 @@
 """Work items and work areas routes"""
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 
 from app.db import get_session
@@ -10,6 +10,8 @@ from app.schemas.work import (
     WorkItemResponse,
     UpdateCreate,
     UpdateResponse,
+    WorkAreaCreate,
+    WorkItemCreate,
 )
 from app.services.work_service import (
     get_work_areas_for_asset,
@@ -19,10 +21,24 @@ from app.services.work_service import (
     get_work_item_by_id,
     add_update_to_item,
     get_updates_for_item,
-    get_outstanding_items,
+    create_work_area,
+    create_work_item,
 )
 
 router = APIRouter(prefix="/work", tags=["work-items"])
+
+
+@router.post("/assets/{asset_id}/areas", response_model=WorkAreaResponse, status_code=status.HTTP_201_CREATED)
+def add_work_area(
+    asset_id: int,
+    area_data: WorkAreaCreate,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_manager_user),
+):
+    """Add a work area to an asset"""
+    # Override asset_id from URL
+    area_data.asset_id = asset_id
+    return create_work_area(db, area_data)
 
 
 @router.get("/assets/{asset_id}/areas", response_model=list[WorkAreaResponse])
@@ -65,6 +81,19 @@ def set_area_relevance(
             status_code=status.HTTP_404_NOT_FOUND, detail="Work area not found"
         )
     return area
+
+
+@router.post("/areas/{area_id}/items", response_model=WorkItemResponse, status_code=status.HTTP_201_CREATED)
+def add_work_item(
+    area_id: int,
+    item_data: WorkItemCreate,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_manager_user),
+):
+    """Add a work item to a work area"""
+    # Override work_area_id from URL
+    item_data.work_area_id = area_id
+    return create_work_item(db, item_data)
 
 
 @router.get("/areas/{area_id}/items", response_model=list[WorkItemResponse])
@@ -137,14 +166,3 @@ def list_item_updates(
 
     updates = get_updates_for_item(db, item_id)
     return updates
-
-
-@router.get("/outstanding", response_model=list[WorkItemResponse])
-def list_outstanding_items(
-    organization_id: int = Query(..., description="Organization ID"),
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
-):
-    """Get outstanding work items for an organization"""
-    items = get_outstanding_items(db, organization_id)
-    return items

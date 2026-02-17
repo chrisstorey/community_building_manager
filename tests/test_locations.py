@@ -3,6 +3,7 @@ import pytest
 from fastapi import status
 from app.models.user import User
 from app.models.organization import Organization, Location, LocationType, LocationAsset
+from app.core.security import get_password_hash
 
 
 @pytest.fixture
@@ -11,7 +12,7 @@ def admin_user(db_session):
     user = User(
         email="admin@test.com",
         full_name="Admin User",
-        hashed_password="hashed_password",
+        hashed_password=get_password_hash("password"),
         role="admin",
         organization_id=1
     )
@@ -40,7 +41,7 @@ def manager_user(db_session, organization):
     user = User(
         email="manager@test.com",
         full_name="Manager User",
-        hashed_password="hashed_password",
+        hashed_password=get_password_hash("password"),
         role="manager",
         organization_id=organization.id
     )

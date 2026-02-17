@@ -8,6 +8,7 @@ from app.schemas.organization import (
     LocationUpdate,
     LocationTypeCreate,
 )
+from app.services.work_service import generate_work_items_from_template
 
 # Predefined asset types with maintenance templates
 DEFAULT_ASSET_TYPES = {
@@ -292,6 +293,12 @@ def add_asset_to_location(
     db.add(db_asset)
     db.commit()
     db.refresh(db_asset)
+
+    # Generate work items from template
+    asset_type = get_location_type_by_id(db, asset_type_id)
+    if asset_type and asset_type.template:
+        generate_work_items_from_template(db, db_asset, asset_type.template)
+
     return db_asset
 
 

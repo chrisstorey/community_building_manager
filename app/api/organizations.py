@@ -4,14 +4,17 @@ from sqlmodel import Session
 
 from app.db import get_session
 from app.models.user import User
+from app.models.organization import LocationAsset
 from app.core.dependencies import get_manager_user, get_current_user
 from app.schemas.organization import (
     OrganizationCreate,
     OrganizationResponse,
     OrganizationUpdate,
     LocationCreate,
+    LocationCreateRequest,
     LocationResponse,
     LocationUpdate,
+    LocationAssetResponse,
 )
 from app.services.organization_service import (
     create_organization,
@@ -76,7 +79,7 @@ def update_org(
 @router.post("/{org_id}/locations", response_model=LocationResponse, status_code=status.HTTP_201_CREATED)
 def create_loc(
     org_id: int,
-    location: LocationCreate,
+    location_request: LocationCreateRequest,
     db: Session = Depends(get_session),
     current_user: User = Depends(get_manager_user),
 ):
@@ -87,10 +90,11 @@ def create_loc(
             status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
         )
 
-    location_data = location.model_dump()
-    location_data['organization_id'] = org_id
-    location_updated = LocationCreate(**location_data)
-    return create_location(db, location_updated)
+    location = LocationCreate(
+        **location_request.model_dump(),
+        organization_id=org_id
+    )
+    return create_location(db, location)
 
 
 @router.get("/{org_id}/locations", response_model=list[LocationResponse])
@@ -109,6 +113,22 @@ def list_locations(
         )
 
     return get_locations_for_organization(db, org_id, skip, limit)
+
+
+@router.get("/locations/search", response_model=list[LocationResponse])
+def search_loc(
+    q: str | None = Query(None, description="Search query"),
+    org_id: int | None = Query(None, description="Filter by organization"),
+    status_filter: str | None = Query(None, description="Filter by status"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Search locations by name, address, or filter by organization and status"""
+    return search_locations(
+        db, org_id=org_id, query=q, status=status_filter, skip=skip, limit=limit
+    )
 
 
 @router.get("/locations/{location_id}", response_model=LocationResponse)
@@ -159,24 +179,9 @@ def delete_loc(
     return None
 
 
-@router.get("/locations/search", response_model=list[LocationResponse])
-def search_loc(
-    q: str | None = Query(None, description="Search query"),
-    org_id: int | None = Query(None, description="Filter by organization"),
-    status_filter: str | None = Query(None, description="Filter by status"),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
-):
-    """Search locations by name, address, or filter by organization and status"""
-    return search_locations(
-        db, org_id=org_id, query=q, status=status_filter, skip=skip, limit=limit
-    )
-
-
 @router.post(
     "/locations/{location_id}/assets/{asset_type_id}",
+    response_model=LocationAssetResponse,
     status_code=status.HTTP_201_CREATED,
 )
 def add_asset(
@@ -201,7 +206,7 @@ def add_asset(
     return add_asset_to_location(db, location_id, asset_type_id)
 
 
-@router.get("/locations/{location_id}/assets")
+@router.get("/locations/{location_id}/assets", response_model=list[LocationAssetResponse])
 def get_assets(
     location_id: int,
     db: Session = Depends(get_session),

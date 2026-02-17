@@ -3,7 +3,26 @@ from sqlmodel import Session, select
 from sqlalchemy import and_, or_
 from app.models.work import WorkArea, WorkItem, Update
 from app.models.organization import LocationAsset, Location
+from app.schemas.work import WorkAreaCreate, WorkItemCreate
 from datetime import datetime, timezone
+
+
+def create_work_area(db: Session, work_area: WorkAreaCreate) -> WorkArea:
+    """Create a new work area"""
+    db_area = WorkArea(**work_area.model_dump())
+    db.add(db_area)
+    db.commit()
+    db.refresh(db_area)
+    return db_area
+
+
+def create_work_item(db: Session, work_item: WorkItemCreate) -> WorkItem:
+    """Create a new work item"""
+    db_item = WorkItem(**work_item.model_dump())
+    db.add(db_item)
+    db.commit()
+    db.refresh(db_item)
+    return db_item
 
 
 def parse_markdown_template(template: str) -> list[tuple[str, list[str]]]:
