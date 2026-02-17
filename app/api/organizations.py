@@ -1,20 +1,15 @@
 """Organization and Location management routes"""
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlmodel import Session
+from flask import Blueprint, request, jsonify
+from pydantic import ValidationError
 
 from app.db import get_session
-from app.models.user import User
-from app.models.organization import LocationAsset
-from app.core.dependencies import get_manager_user, get_current_user
+from app.core.dependencies import require_manager, require_auth, get_current_user
 from app.schemas.organization import (
     OrganizationCreate,
-    OrganizationResponse,
     OrganizationUpdate,
     LocationCreate,
     LocationCreateRequest,
-    LocationResponse,
     LocationUpdate,
-    LocationAssetResponse,
 )
 from app.services.organization_service import (
     create_organization,
@@ -32,218 +27,207 @@ from app.services.organization_service import (
     remove_asset_from_location,
 )
 
-router = APIRouter(prefix="/organizations", tags=["organizations"])
+org_bp = Blueprint("organizations", __name__, url_prefix="/organizations")
 
 
-@router.post("", response_model=OrganizationResponse, status_code=status.HTTP_201_CREATED)
-def create_org(
-    org: OrganizationCreate,
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_manager_user),
-):
+def _org_to_dict(org):
+    return {
+        "id": org.id,
+        "name": org.name,
+        "address": org.address,
+    }
+
+
+def _location_to_dict(loc):
+    return {
+        "id": loc.id,
+        "name": loc.name,
+        "address": loc.address,
+        "latitude": loc.latitude,
+        "longitude": loc.longitude,
+        "status": loc.status,
+        "organization_id": loc.organization_id,
+    }
+
+
+def _asset_to_dict(asset):
+    return {
+        "id": asset.id,
+        "location_id": asset.location_id,
+        "asset_type_id": asset.asset_type_id,
+    }
+
+
+@org_bp.route("", methods=["POST"])
+@require_manager
+def create_org():
     """Create a new organization"""
-    return create_organization(db, org)
+    try:
+        org_data = OrganizationCreate(**request.get_json())
+    except (ValidationError, TypeError) as e:
+        return jsonify({"detail": str(e)}), 400
+
+    db = get_session()
+    org = create_organization(db, org_data)
+    return jsonify(_org_to_dict(org)), 201
 
 
-@router.get("/{org_id}", response_model=OrganizationResponse)
-def get_org(
-    org_id: int,
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
-):
+@org_bp.route("/<int:org_id>", methods=["GET"])
+@require_auth
+def get_org(org_id):
     """Get organization by ID"""
+    db = get_session()
     org = get_organization_by_id(db, org_id)
     if not org:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        )
-    return org
+        return jsonify({"detail": "Organization not found"}), 404
+    return jsonify(_org_to_dict(org)), 200
 
 
-@router.patch("/{org_id}", response_model=OrganizationResponse)
-def update_org(
-    org_id: int,
-    org_update: OrganizationUpdate,
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_manager_user),
-):
+@org_bp.route("/<int:org_id>", methods=["PATCH"])
+@require_manager
+def update_org(org_id):
     """Update organization"""
+    try:
+        org_update = OrganizationUpdate(**request.get_json())
+    except (ValidationError, TypeError) as e:
+        return jsonify({"detail": str(e)}), 400
+
+    db = get_session()
     org = update_organization(db, org_id, org_update)
     if not org:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        )
-    return org
+        return jsonify({"detail": "Organization not found"}), 404
+    return jsonify(_org_to_dict(org)), 200
 
 
-@router.post("/{org_id}/locations", response_model=LocationResponse, status_code=status.HTTP_201_CREATED)
-def create_loc(
-    org_id: int,
-    location_request: LocationCreateRequest,
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_manager_user),
-):
+@org_bp.route("/<int:org_id>/locations", methods=["POST"])
+@require_manager
+def create_loc(org_id):
     """Create a location for an organization"""
+    db = get_session()
     org = get_organization_by_id(db, org_id)
     if not org:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        )
+        return jsonify({"detail": "Organization not found"}), 404
 
-    location = LocationCreate(
-        **location_request.model_dump(),
-        organization_id=org_id
-    )
-    return create_location(db, location)
+    try:
+        loc_req = LocationCreateRequest(**request.get_json())
+        location = LocationCreate(**loc_req.model_dump(), organization_id=org_id)
+    except (ValidationError, TypeError) as e:
+        return jsonify({"detail": str(e)}), 400
+
+    loc = create_location(db, location)
+    return jsonify(_location_to_dict(loc)), 201
 
 
-@router.get("/{org_id}/locations", response_model=list[LocationResponse])
-def list_locations(
-    org_id: int,
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
-):
+@org_bp.route("/<int:org_id>/locations", methods=["GET"])
+@require_auth
+def list_locations(org_id):
     """List locations for an organization"""
+    db = get_session()
     org = get_organization_by_id(db, org_id)
     if not org:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
-        )
+        return jsonify({"detail": "Organization not found"}), 404
 
-    return get_locations_for_organization(db, org_id, skip, limit)
-
-
-@router.get("/locations/search", response_model=list[LocationResponse])
-def search_loc(
-    q: str | None = Query(None, description="Search query"),
-    org_id: int | None = Query(None, description="Filter by organization"),
-    status_filter: str | None = Query(None, description="Filter by status"),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
-):
-    """Search locations by name, address, or filter by organization and status"""
-    return search_locations(
-        db, org_id=org_id, query=q, status=status_filter, skip=skip, limit=limit
-    )
+    skip = request.args.get("skip", 0, type=int)
+    limit = request.args.get("limit", 100, type=int)
+    locations = get_locations_for_organization(db, org_id, skip, limit)
+    return jsonify([_location_to_dict(loc) for loc in locations]), 200
 
 
-@router.get("/locations/{location_id}", response_model=LocationResponse)
-def get_loc(
-    location_id: int,
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
-):
+@org_bp.route("/locations/search", methods=["GET"])
+@require_auth
+def search_loc():
+    """Search locations"""
+    db = get_session()
+    q = request.args.get("q")
+    org_id = request.args.get("org_id", type=int)
+    status_filter = request.args.get("status_filter")
+    skip = request.args.get("skip", 0, type=int)
+    limit = request.args.get("limit", 100, type=int)
+
+    locations = search_locations(db, org_id=org_id, query=q, status=status_filter, skip=skip, limit=limit)
+    return jsonify([_location_to_dict(loc) for loc in locations]), 200
+
+
+@org_bp.route("/locations/<int:location_id>", methods=["GET"])
+@require_auth
+def get_loc(location_id):
     """Get location by ID"""
+    db = get_session()
     location = get_location_by_id(db, location_id)
     if not location:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Location not found"
-        )
-    return location
+        return jsonify({"detail": "Location not found"}), 404
+    return jsonify(_location_to_dict(location)), 200
 
 
-@router.patch("/locations/{location_id}", response_model=LocationResponse)
-def update_loc(
-    location_id: int,
-    location_update: LocationUpdate,
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_manager_user),
-):
+@org_bp.route("/locations/<int:location_id>", methods=["PATCH"])
+@require_manager
+def update_loc(location_id):
     """Update location"""
-    location = update_location(db, location_id, location_update)
+    try:
+        loc_update = LocationUpdate(**request.get_json())
+    except (ValidationError, TypeError) as e:
+        return jsonify({"detail": str(e)}), 400
+
+    db = get_session()
+    location = update_location(db, location_id, loc_update)
     if not location:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Location not found"
-        )
-    return location
+        return jsonify({"detail": "Location not found"}), 404
+    return jsonify(_location_to_dict(location)), 200
 
 
-@router.delete("/locations/{location_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_loc(
-    location_id: int,
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_manager_user),
-):
+@org_bp.route("/locations/<int:location_id>", methods=["DELETE"])
+@require_manager
+def delete_loc(location_id):
     """Delete (soft delete) a location"""
+    db = get_session()
     location = get_location_by_id(db, location_id)
     if not location:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Location not found"
-        )
-
+        return jsonify({"detail": "Location not found"}), 404
     delete_location(db, location_id)
-    return None
+    return "", 204
 
 
-@router.post(
-    "/locations/{location_id}/assets/{asset_type_id}",
-    response_model=LocationAssetResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-def add_asset(
-    location_id: int,
-    asset_type_id: int,
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_manager_user),
-):
+@org_bp.route("/locations/<int:location_id>/assets/<int:asset_type_id>", methods=["POST"])
+@require_manager
+def add_asset(location_id, asset_type_id):
     """Add an asset type instance to a location"""
+    db = get_session()
     location = get_location_by_id(db, location_id)
     if not location:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Location not found"
-        )
+        return jsonify({"detail": "Location not found"}), 404
 
     asset_type = get_location_type_by_id(db, asset_type_id)
     if not asset_type:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Asset type not found"
-        )
+        return jsonify({"detail": "Asset type not found"}), 404
 
-    return add_asset_to_location(db, location_id, asset_type_id)
+    asset = add_asset_to_location(db, location_id, asset_type_id)
+    return jsonify(_asset_to_dict(asset)), 201
 
 
-@router.get("/locations/{location_id}/assets", response_model=list[LocationAssetResponse])
-def get_assets(
-    location_id: int,
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
-):
+@org_bp.route("/locations/<int:location_id>/assets", methods=["GET"])
+@require_auth
+def get_assets(location_id):
     """Get all assets for a location"""
+    db = get_session()
     location = get_location_by_id(db, location_id)
     if not location:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Location not found"
-        )
+        return jsonify({"detail": "Location not found"}), 404
 
     assets = get_location_assets(db, location_id)
-    return assets
+    return jsonify([_asset_to_dict(asset) for asset in assets]), 200
 
 
-@router.delete(
-    "/locations/{location_id}/assets/{asset_id}",
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-def remove_asset(
-    location_id: int,
-    asset_id: int,
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_manager_user),
-):
+@org_bp.route("/locations/<int:location_id>/assets/<int:asset_id>", methods=["DELETE"])
+@require_manager
+def remove_asset(location_id, asset_id):
     """Remove an asset from a location"""
+    db = get_session()
     location = get_location_by_id(db, location_id)
     if not location:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Location not found"
-        )
+        return jsonify({"detail": "Location not found"}), 404
 
     success = remove_asset_from_location(db, location_id, asset_id)
     if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found"
-        )
+        return jsonify({"detail": "Asset not found"}), 404
 
-    return None
+    return "", 204

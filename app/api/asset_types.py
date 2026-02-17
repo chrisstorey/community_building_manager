@@ -1,12 +1,12 @@
 """Asset type management routes"""
-from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlmodel import Session, select
+from flask import Blueprint, request, jsonify
+from sqlmodel import select
+from pydantic import ValidationError
 
 from app.db import get_session
-from app.models.user import User
 from app.models.organization import LocationType
-from app.core.dependencies import get_admin_user, get_current_user
-from app.schemas.organization import LocationTypeCreate, LocationTypeResponse
+from app.core.dependencies import require_admin, require_auth
+from app.schemas.organization import LocationTypeCreate
 from app.services.organization_service import (
     create_location_type,
     get_location_type_by_id,
@@ -14,59 +14,64 @@ from app.services.organization_service import (
     initialize_default_asset_types,
 )
 
-router = APIRouter(prefix="/asset-types", tags=["asset-types"])
+asset_types_bp = Blueprint("asset_types", __name__, url_prefix="/asset-types")
 
 
-@router.post("", response_model=LocationTypeResponse, status_code=status.HTTP_201_CREATED)
-def create_asset_type(
-    asset_type: LocationTypeCreate,
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_admin_user),
-):
+def _asset_type_to_dict(at):
+    return {
+        "id": at.id,
+        "name": at.name,
+        "description": at.description,
+        "template": at.template,
+    }
+
+
+@asset_types_bp.route("", methods=["POST"])
+@require_admin
+def create_asset_type():
     """Create a new asset type with markdown template"""
-    # Check for unique name
+    try:
+        asset_data = LocationTypeCreate(**request.get_json())
+    except (ValidationError, TypeError) as e:
+        return jsonify({"detail": str(e)}), 400
+
+    db = get_session()
     existing = db.exec(
-        select(LocationType).where(LocationType.name == asset_type.name)
+        select(LocationType).where(LocationType.name == asset_data.name)
     ).first()
     if existing:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Asset type with this name already exists",
-        )
+        return jsonify({"detail": "Asset type with this name already exists"}), 409
 
-    return create_location_type(db, asset_type)
+    at = create_location_type(db, asset_data)
+    return jsonify(_asset_type_to_dict(at)), 201
 
 
-@router.get("/{asset_type_id}", response_model=LocationTypeResponse)
-def get_asset_type(
-    asset_type_id: int,
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
-):
+@asset_types_bp.route("/<int:asset_type_id>", methods=["GET"])
+@require_auth
+def get_asset_type(asset_type_id):
     """Get asset type by ID"""
+    db = get_session()
     asset_type = get_location_type_by_id(db, asset_type_id)
     if not asset_type:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Asset type not found"
-        )
-    return asset_type
+        return jsonify({"detail": "Asset type not found"}), 404
+    return jsonify(_asset_type_to_dict(asset_type)), 200
 
 
-@router.get("", response_model=list[LocationTypeResponse])
-def list_asset_types(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
-):
+@asset_types_bp.route("", methods=["GET"])
+@require_auth
+def list_asset_types():
     """List all asset types"""
-    return get_all_location_types(db, skip, limit)
+    db = get_session()
+    skip = request.args.get("skip", 0, type=int)
+    limit = request.args.get("limit", 100, type=int)
+    asset_types = get_all_location_types(db, skip, limit)
+    return jsonify([_asset_type_to_dict(at) for at in asset_types]), 200
 
 
-@router.post("/initialize-defaults", response_model=list[LocationTypeResponse], status_code=status.HTTP_201_CREATED)
-def initialize_defaults(
-    db: Session = Depends(get_session),
-    current_user: User = Depends(get_admin_user),
-):
+@asset_types_bp.route("/initialize-defaults", methods=["POST"])
+@require_admin
+def initialize_defaults():
     """Initialize default asset types for scout organizations"""
-    return initialize_default_asset_types(db)
+    db = get_session()
+    asset_types = initialize_default_asset_types(db)
+    return jsonify([_asset_type_to_dict(at) for at in asset_types]), 201

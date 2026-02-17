@@ -4,6 +4,7 @@ Uses SQLModel for unified ORM + schema definitions.
 """
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.engine import Engine
+from contextlib import contextmanager
 
 from app.config import settings
 
@@ -30,9 +31,23 @@ engine = create_db_engine()
 
 
 def get_session():
-    """Dependency for getting database session."""
+    """Get database session."""
     with Session(engine) as session:
+        return session
+
+
+@contextmanager
+def get_session_context():
+    """Context manager for database session."""
+    session = Session(engine)
+    try:
         yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 def init_db():

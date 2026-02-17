@@ -1,6 +1,6 @@
 """Tests for location management endpoints"""
 import pytest
-from fastapi import status
+
 from app.models.user import User
 from app.models.organization import Organization, Location, LocationType, LocationAsset
 from app.core.security import get_password_hash
@@ -58,8 +58,8 @@ def auth_token(client, manager_user):
         "/auth/login",
         json={"email": "manager@test.com", "password": "password"}
     )
-    assert response.status_code == status.HTTP_200_OK
-    return response.json()["access_token"]
+    assert response.status_code == 200
+    return response.json["access_token"]
 
 
 def test_create_location(client, organization, auth_token):
@@ -73,8 +73,8 @@ def test_create_location(client, organization, auth_token):
             "status": "active"
         }
     )
-    assert response.status_code == status.HTTP_201_CREATED
-    data = response.json()
+    assert response.status_code == 201
+    data = response.json
     assert data["name"] == "Main Building"
     assert data["address"] == "123 Main St"
     assert data["status"] == "active"
@@ -99,8 +99,8 @@ def test_create_location_with_details(client, organization, auth_token):
             "contact_email": "john@example.com"
         }
     )
-    assert response.status_code == status.HTTP_201_CREATED
-    data = response.json()
+    assert response.status_code == 201
+    data = response.json
     assert data["name"] == "Scout HQ"
     assert data["latitude"] == 51.5074
     assert data["longitude"] == -0.1278
@@ -122,8 +122,8 @@ def test_get_location(client, db_session, organization, auth_token):
         f"/organizations/locations/{location.id}",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
+    assert response.status_code == 200
+    data = response.json
     assert data["id"] == location.id
     assert data["name"] == "Test Location"
 
@@ -144,8 +144,8 @@ def test_list_locations(client, db_session, organization, auth_token):
         f"/organizations/{organization.id}/locations",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
+    assert response.status_code == 200
+    data = response.json
     assert len(data) == 3
 
 
@@ -162,8 +162,8 @@ def test_list_locations_excludes_deleted(client, db_session, organization, auth_
         f"/organizations/{organization.id}/locations",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
+    assert response.status_code == 200
+    data = response.json
     assert len(data) == 1
     assert data[0]["name"] == "Active"
 
@@ -187,8 +187,8 @@ def test_update_location(client, db_session, organization, auth_token):
             "capacity": 50
         }
     )
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
+    assert response.status_code == 200
+    data = response.json
     assert data["name"] == "Updated Name"
     assert data["status"] == "inactive"
     assert data["capacity"] == 50
@@ -216,7 +216,7 @@ def test_delete_location(client, db_session, organization, auth_token):
         headers={"Authorization": f"Bearer {auth_token}"}
     )
     # Location should still be retrievable, but marked as deleted
-    data = response.json()
+    data = response.json
     assert data["is_deleted"] is True
 
 
@@ -232,8 +232,8 @@ def test_search_locations_by_name(client, db_session, organization, auth_token):
         "/organizations/locations/search?q=Scout",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
+    assert response.status_code == 200
+    data = response.json
     assert len(data) == 1
     assert data[0]["name"] == "Scout HQ"
 
@@ -250,8 +250,8 @@ def test_search_locations_by_address(client, db_session, organization, auth_toke
         "/organizations/locations/search?q=Main",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
+    assert response.status_code == 200
+    data = response.json
     assert len(data) == 1
     assert data[0]["address"] == "123 Main St"
 
@@ -268,8 +268,8 @@ def test_filter_locations_by_status(client, db_session, organization, auth_token
         "/organizations/locations/search?status_filter=active",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
+    assert response.status_code == 200
+    data = response.json
     assert len(data) == 1
     assert data[0]["status"] == "active"
 
@@ -290,7 +290,7 @@ def test_add_asset_to_location(client, db_session, organization, auth_token):
         f"/organizations/locations/{location.id}/assets/{asset_type.id}",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_201_CREATED
+    assert response.status_code == 201
 
 
 def test_get_location_assets(client, db_session, organization, auth_token):
@@ -314,8 +314,8 @@ def test_get_location_assets(client, db_session, organization, auth_token):
         f"/organizations/locations/{location.id}/assets",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
+    assert response.status_code == 200
+    data = response.json
     assert len(data) == 1
 
 
