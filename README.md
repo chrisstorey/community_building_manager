@@ -17,8 +17,9 @@ A FastAPI-based service for managing community buildings, tracking maintenance a
 
 ### Technology Stack
 
-- **Backend**: Python 3.11+ with FastAPI 0.104+
-- **Database**: SQLAlchemy ORM (SQLite for development, PostgreSQL for production)
+- **Backend**: Python 3.13+ with FastAPI 0.115+
+- **Package Manager**: UV (fast Python package management)
+- **ORM**: SQLModel with SQLAlchemy (SQLite for development, PostgreSQL for production)
 - **Authentication**: JWT tokens with argon2 password hashing
 - **Frontend**: HTML5, CSS3 (Bootstrap 5), Vanilla JavaScript
 - **Testing**: pytest with async support
@@ -42,7 +43,7 @@ community_building_manager/
 ├── static/                  # CSS, JavaScript, images
 ├── templates/               # HTML templates
 ├── tests/                   # Pytest test suite
-├── requirements.txt         # Python dependencies
+├── pyproject.toml          # Project metadata and dependencies
 ├── .env.example            # Example environment variables
 └── README.md
 ```
@@ -51,8 +52,8 @@ community_building_manager/
 
 ### Prerequisites
 
-- Python 3.11 or higher
-- pip package manager
+- Python 3.13 or higher (3.12 supported but 3.13+ recommended for better compatibility)
+- UV package manager (install from https://docs.astral.sh/uv/)
 
 ### Setup
 
@@ -68,9 +69,11 @@ community_building_manager/
    # Edit .env with your settings
    ```
 
-3. **Install dependencies**
+3. **Create virtual environment and install dependencies**
    ```bash
-   pip install -r requirements.txt
+   uv venv --python 3.13
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   uv pip install -e .
    ```
 
 4. **Run migrations**
@@ -78,7 +81,7 @@ community_building_manager/
 
 5. **Start the server**
    ```bash
-   python -m uvicorn app.main:app --reload
+   uvicorn app.main:app --reload
    ```
 
    The API will be available at `http://localhost:8000`
