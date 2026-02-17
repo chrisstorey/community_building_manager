@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Work Items - Community Building Manager{% endblock %}
+
+{% block content %}
+<div class="work-items-container">
+    <h1>Work Items</h1>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <p style="color: var(--text-light); margin: 0;">Track and manage maintenance work items</p>
+        <button class="btn btn-action" id="add-item-btn">+ Add Work Item</button>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>All Work Items</h3>
+        </div>
+        <div id="work-items-list">
+            <p style="text-align: center; color: var(--text-light);">Loading work items...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadWorkItems() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+
+        try {
+            const userOrgId = await getCurrentUserOrgId();
+            const response = await fetch(`/work-items?organization_id=${userOrgId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const items = await response.json();
+            displayWorkItems(items);
+        } catch (error) {
+            console.error('Error loading work items:', error);
+            document.getElementById('work-items-list').innerHTML = `<div class="alert alert-danger">Error loading work items. Please refresh the page.</div>`;
+        }
+    }
+
+    async function getCurrentUserOrgId() {
+        const token = localStorage.getItem('access_token');
+        const resp = await fetch('/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const user = await resp.json();
+        return user.organization_id;
+    }
+
+    function displayWorkItems(items) {
+        const container = document.getElementById('work-items-list');
+        if (items.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: var(--text-light);">No work items yet. Click "Add Work Item" to create one.</p>';
+            return;
+        }
+
+        let html = '<table class="table">';
+        html += '<thead><tr><th>Item</th><th>Location</th><th>Status</th><th>Last Updated</th><th>Actions</th></tr></thead><tbody>';
+        items.forEach(item => {
+            html += `<tr>
+                <td>${item.statement || item.name || 'Unnamed'}</td>
+                <td>${item.location_name || 'N/A'}</td>
+                <td><span class="badge badge-action">Pending</span></td>
+                <td>${item.updated_at ? new Date(item.updated_at).toLocaleDateString() : 'N/A'}</td>
+                <td><a href="#" class="nav-link" style="color: var(--action);">Edit</a></td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    document.getElementById('add-item-btn').addEventListener('click', () => {
+        alert('Add work item feature coming soon');
+    });
+
+    window.addEventListener('load', loadWorkItems);
+</script>
+{% endblock %}

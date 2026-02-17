@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Locations - Community Building Manager{% endblock %}
+
+{% block content %}
+<div class="locations-container">
+    <h1>Locations</h1>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <p style="color: var(--text-light); margin: 0;">Manage your community building locations</p>
+        <button class="btn btn-action" id="add-location-btn">+ Add Location</button>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>All Locations</h3>
+        </div>
+        <div id="locations-list">
+            <p style="text-align: center; color: var(--text-light);">Loading locations...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadLocations() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+
+        try {
+            const userOrgId = await getCurrentUserOrgId();
+            const response = await fetch(`/organizations/${userOrgId}/locations`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const locations = await response.json();
+            displayLocations(locations);
+        } catch (error) {
+            console.error('Error loading locations:', error);
+            document.getElementById('locations-list').innerHTML = `<div class="alert alert-danger">Error loading locations. Please refresh the page.</div>`;
+        }
+    }
+
+    async function getCurrentUserOrgId() {
+        const token = localStorage.getItem('access_token');
+        const resp = await fetch('/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const user = await resp.json();
+        return user.organization_id;
+    }
+
+    function displayLocations(locations) {
+        const container = document.getElementById('locations-list');
+        if (locations.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: var(--text-light);">No locations yet. Click "Add Location" to get started.</p>';
+            return;
+        }
+
+        let html = '<table class="table">';
+        html += '<thead><tr><th>Name</th><th>Type</th><th>Address</th><th>Actions</th></tr></thead><tbody>';
+        locations.forEach(location => {
+            html += `<tr>
+                <td>${location.name}</td>
+                <td>${location.location_type || 'N/A'}</td>
+                <td>${location.address || 'N/A'}</td>
+                <td><a href="#" class="nav-link" style="color: var(--action);">View</a></td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    document.getElementById('add-location-btn').addEventListener('click', () => {
+        alert('Add location feature coming soon');
+    });
+
+    window.addEventListener('load', loadLocations);
+</script>
+{% endblock %}
