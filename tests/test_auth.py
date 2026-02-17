@@ -73,8 +73,8 @@ def test_login_endpoint(client, db_session: Session):
         json={"email": "test@example.com", "password": "testpassword123"},
     )
     assert response.status_code == 200
-    assert "access_token" in response.json()
-    assert response.json()["token_type"] == "bearer"
+    assert "access_token" in response.json
+    assert response.json["token_type"] == "bearer"
 
 
 def test_login_invalid_credentials(client):
@@ -104,7 +104,7 @@ def test_register_endpoint(client, db_session: Session):
         },
     )
     assert response.status_code == 201
-    assert response.json()["email"] == "newuser@example.com"
+    assert response.json["email"] == "newuser@example.com"
 
 
 def test_register_duplicate_email(client, db_session: Session):

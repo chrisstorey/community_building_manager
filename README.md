@@ -1,6 +1,6 @@
 # Community Building Manager
 
-A FastAPI-based service for managing community buildings, tracking maintenance activities, and coordinating asset management across multiple locations.
+A Flask-based service for managing community buildings, tracking maintenance activities, and coordinating asset management across multiple locations.
 
 ## Features
 
@@ -17,7 +17,7 @@ A FastAPI-based service for managing community buildings, tracking maintenance a
 
 ### Technology Stack
 
-- **Backend**: Python 3.13+ with FastAPI 0.115+
+- **Backend**: Python 3.13+ with Flask 0.115+
 - **Package Manager**: UV (fast Python package management)
 - **ORM**: SQLModel with SQLAlchemy (SQLite for development, PostgreSQL for production)
 - **Authentication**: JWT tokens with argon2 password hashing
@@ -29,7 +29,7 @@ A FastAPI-based service for managing community buildings, tracking maintenance a
 ```
 community_building_manager/
 ├── app/
-│   ├── main.py              # FastAPI application entry point
+│   ├── main.py              # Flask application entry point
 │   ├── config.py            # Configuration management
 │   ├── models/              # Database models
 │   │   ├── user.py
@@ -81,7 +81,7 @@ community_building_manager/
 
 5. **Start the server**
    ```bash
-   uvicorn app.main:app --reload
+   Flask development server app.main:app --reload
    ```
 
    The API will be available at `http://localhost:8000`
@@ -91,7 +91,7 @@ community_building_manager/
 ### API Documentation
 
 Interactive API documentation is available at:
-- **Swagger UI**: http://localhost:8000/docs
+- **Flask built-in debug toolbar**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 
 ### Authentication
@@ -325,7 +325,7 @@ The application uses SQLAlchemy with automatic table creation. To modify the sch
 
 2. **Use production ASGI server**
    ```bash
-   gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker
+   gunicorn app.main:app --workers 4 --worker-class Flask development server.workers.UvicornWorker
    ```
 
 3. **Configure reverse proxy** (nginx)

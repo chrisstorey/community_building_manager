@@ -1,6 +1,6 @@
 """Tests for asset type management endpoints"""
 import pytest
-from fastapi import status
+
 from app.models.user import User
 from app.models.organization import Organization, LocationType
 from app.core.security import get_password_hash
@@ -42,8 +42,8 @@ def auth_token(client, admin_user):
         "/auth/login",
         json={"email": "admin@test.com", "password": "password"}
     )
-    assert response.status_code == status.HTTP_200_OK
-    return response.json()["access_token"]
+    assert response.status_code == 200
+    return response.json["access_token"]
 
 
 def test_create_asset_type(client, auth_token):
@@ -57,8 +57,8 @@ def test_create_asset_type(client, auth_token):
             "template": "## Area: Roof\n- Check for leaks\n\n## Area: HVAC\n- Replace filters"
         }
     )
-    assert response.status_code == status.HTTP_201_CREATED
-    data = response.json()
+    assert response.status_code == 201
+    data = response.json
     assert data["name"] == "Scout HQ"
     assert data["description"] == "Scout headquarters building"
     assert "## Area: Roof" in data["template"]
@@ -85,7 +85,7 @@ def test_create_asset_type_duplicate_name(client, db_session, auth_token):
             "template": "## Different\n- Task"
         }
     )
-    assert response.status_code == status.HTTP_409_CONFLICT
+    assert response.status_code == 409
 
 
 def test_get_asset_type(client, db_session, auth_token):
@@ -102,8 +102,8 @@ def test_get_asset_type(client, db_session, auth_token):
         f"/asset-types/{asset.id}",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
+    assert response.status_code == 200
+    data = response.json
     assert data["name"] == "Church"
     assert data["description"] == "Church building"
 
@@ -124,8 +124,8 @@ def test_list_asset_types(client, db_session, auth_token):
         "/asset-types",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
+    assert response.status_code == 200
+    data = response.json
     assert len(data) == 3
     assert data[0]["name"] == "Scout HQ"
     assert data[1]["name"] == "Church"
@@ -148,8 +148,8 @@ def test_list_asset_types_pagination(client, db_session, auth_token):
         "/asset-types?skip=0&limit=2",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_200_OK
-    data = response.json()
+    assert response.status_code == 200
+    data = response.json
     assert len(data) == 2
 
 
@@ -159,8 +159,8 @@ def test_initialize_default_asset_types(client, auth_token):
         "/asset-types/initialize-defaults",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_201_CREATED
-    data = response.json()
+    assert response.status_code == 201
+    data = response.json
 
     # Should have 6 default asset types
     assert len(data) == 6
@@ -182,16 +182,16 @@ def test_initialize_default_asset_types_idempotent(client, auth_token):
         "/asset-types/initialize-defaults",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response1.status_code == status.HTTP_201_CREATED
-    count1 = len(response1.json())
+    assert response1.status_code == 201
+    count1 = len(response1.json)
 
     # Second initialization
     response2 = client.post(
         "/asset-types/initialize-defaults",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response2.status_code == status.HTTP_201_CREATED
-    count2 = len(response2.json())
+    assert response2.status_code == 201
+    count2 = len(response2.json)
 
     # Should return the same count (no duplicates)
     assert count1 == count2 == 6
@@ -203,8 +203,8 @@ def test_scout_hq_template_has_maintenance_areas(client, auth_token):
         "/asset-types/initialize-defaults",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_201_CREATED
-    data = response.json()
+    assert response.status_code == 201
+    data = response.json
 
     scout_hq = next(asset for asset in data if asset["name"] == "Scout HQ")
     template = scout_hq["template"]
@@ -220,8 +220,8 @@ def test_church_template_has_maintenance_areas(client, auth_token):
         "/asset-types/initialize-defaults",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_201_CREATED
-    data = response.json()
+    assert response.status_code == 201
+    data = response.json
 
     church = next(asset for asset in data if asset["name"] == "Church")
     template = church["template"]
@@ -237,8 +237,8 @@ def test_church_hall_template_has_maintenance_areas(client, auth_token):
         "/asset-types/initialize-defaults",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_201_CREATED
-    data = response.json()
+    assert response.status_code == 201
+    data = response.json
 
     church_hall = next(asset for asset in data if asset["name"] == "Church Hall")
     template = church_hall["template"]
@@ -254,8 +254,8 @@ def test_scout_activity_centre_template_has_maintenance_areas(client, auth_token
         "/asset-types/initialize-defaults",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_201_CREATED
-    data = response.json()
+    assert response.status_code == 201
+    data = response.json
 
     centre = next(asset for asset in data if asset["name"] == "Scout Activity Centre")
     template = centre["template"]
@@ -271,8 +271,8 @@ def test_scout_campsite_template_has_maintenance_areas(client, auth_token):
         "/asset-types/initialize-defaults",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_201_CREATED
-    data = response.json()
+    assert response.status_code == 201
+    data = response.json
 
     campsite = next(asset for asset in data if asset["name"] == "Scout Campsite")
     template = campsite["template"]
@@ -288,8 +288,8 @@ def test_community_building_template_has_maintenance_areas(client, auth_token):
         "/asset-types/initialize-defaults",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_201_CREATED
-    data = response.json()
+    assert response.status_code == 201
+    data = response.json
 
     community = next(asset for asset in data if asset["name"] == "Community Building")
     template = community["template"]
@@ -320,8 +320,8 @@ def test_asset_type_template_markdown_format(client, auth_token):
             "template": template
         }
     )
-    assert response.status_code == status.HTTP_201_CREATED
-    data = response.json()
+    assert response.status_code == 201
+    data = response.json
     assert data["template"] == template
 
     # Verify it has proper structure
@@ -335,4 +335,4 @@ def test_get_nonexistent_asset_type(client, auth_token):
         "/asset-types/99999",
         headers={"Authorization": f"Bearer {auth_token}"}
     )
-    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.status_code == 404
