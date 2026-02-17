@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Community Building Manager{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <h1>Settings</h1>
+
+    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem;">
+        <!-- Organization Settings -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Organization Settings</h3>
+            </div>
+            <div style="padding: 1rem;">
+                <div class="form-group">
+                    <label>Organization Name</label>
+                    <input type="text" class="form-control" id="org-name" placeholder="Loading...">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea class="form-control" id="org-description" rows="4" placeholder="Loading..."></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="saveOrgSettings()">Save Changes</button>
+            </div>
+        </div>
+
+        <!-- User Settings -->
+        <div class="card">
+            <div class="card-header">
+                <h3>User Settings</h3>
+            </div>
+            <div style="padding: 1rem;">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" class="form-control" id="user-email" placeholder="Loading..." readonly>
+                </div>
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" class="form-control" id="user-name" placeholder="Loading...">
+                </div>
+                <button class="btn btn-primary" onclick="saveUserSettings()">Update Profile</button>
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="card" style="border: 1px solid #fee2e2;">
+            <div class="card-header" style="background-color: #fee2e2;">
+                <h3 style="color: #dc2626; margin: 0;">Danger Zone</h3>
+            </div>
+            <div style="padding: 1rem;">
+                <p style="color: var(--text-light); margin-bottom: 1rem;">Irreversible actions that require caution</p>
+                <button class="btn" style="background-color: #dc2626; color: white;" onclick="if(confirm('Are you sure?')) alert('Delete organization feature coming soon')">Delete Organization</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadSettings() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+
+        try {
+            // Load user info
+            const userResp = await fetch('/auth/me', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const user = await userResp.json();
+            document.getElementById('user-email').value = user.email;
+            document.getElementById('user-name').value = user.full_name || '';
+
+            // Load organization info
+            const orgResp = await fetch(`/organizations/${user.organization_id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const org = await orgResp.json();
+            document.getElementById('org-name').value = org.name;
+            document.getElementById('org-description').value = org.description || '';
+        } catch (error) {
+            console.error('Error loading settings:', error);
+        }
+    }
+
+    function saveOrgSettings() {
+        alert('Save organization settings feature coming soon');
+    }
+
+    function saveUserSettings() {
+        alert('Save user settings feature coming soon');
+    }
+
+    window.addEventListener('load', loadSettings);
+</script>
+{% endblock %}

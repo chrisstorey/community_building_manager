@@ -74,6 +74,24 @@ def dashboard_page(request: Request):
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
+@app.get("/locations")
+def locations_page(request: Request):
+    """Serve locations page"""
+    return templates.TemplateResponse("locations.html", {"request": request})
+
+
+@app.get("/work-items")
+def work_items_page(request: Request):
+    """Serve work items page"""
+    return templates.TemplateResponse("work-items.html", {"request": request})
+
+
+@app.get("/settings")
+def settings_page(request: Request):
+    """Serve settings page"""
+    return templates.TemplateResponse("settings.html", {"request": request})
+
+
 @app.get("/health")
 def health_check():
     """Health check endpoint"""
