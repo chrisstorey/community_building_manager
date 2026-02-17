@@ -50,6 +50,14 @@ class LocationBase(BaseModel):
     """Base location schema"""
     name: str
     address: str
+    latitude: float | None = None
+    longitude: float | None = None
+    status: str = "active"
+    opening_hours: str | None = None
+    capacity: int | None = None
+    contact_person: str | None = None
+    contact_phone: str | None = None
+    contact_email: str | None = None
 
 
 class LocationCreate(LocationBase):
@@ -61,6 +69,14 @@ class LocationUpdate(BaseModel):
     """Location update schema"""
     name: str | None = None
     address: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    status: str | None = None
+    opening_hours: str | None = None
+    capacity: int | None = None
+    contact_person: str | None = None
+    contact_phone: str | None = None
+    contact_email: str | None = None
 
 
 class LocationResponse(LocationBase):
@@ -69,6 +85,7 @@ class LocationResponse(LocationBase):
 
     id: int
     organization_id: int
+    is_deleted: bool
     created_at: datetime
     updated_at: datetime
 

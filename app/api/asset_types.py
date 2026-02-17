@@ -11,6 +11,7 @@ from app.services.organization_service import (
     create_location_type,
     get_location_type_by_id,
     get_all_location_types,
+    initialize_default_asset_types,
 )
 
 router = APIRouter(prefix="/asset-types", tags=["asset-types"])
@@ -60,3 +61,12 @@ def list_asset_types(
 ):
     """List all asset types"""
     return get_all_location_types(db, skip, limit)
+
+
+@router.post("/initialize-defaults", response_model=list[LocationTypeResponse], status_code=status.HTTP_201_CREATED)
+def initialize_defaults(
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_admin_user),
+):
+    """Initialize default asset types for scout organizations"""
+    return initialize_default_asset_types(db)

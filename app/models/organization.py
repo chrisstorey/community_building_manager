@@ -72,6 +72,21 @@ class Location(SQLModel, table=True):
     organization_id: int = Field(foreign_key="organizations.id")
     name: str = Field(max_length=255)
     address: str
+    latitude: float | None = Field(default=None, description="GPS latitude coordinate")
+    longitude: float | None = Field(default=None, description="GPS longitude coordinate")
+    status: str = Field(
+        default="active",
+        description="Location status: active, inactive, under_maintenance"
+    )
+    opening_hours: str | None = Field(
+        default=None,
+        description="Operating hours in format 'Mon-Fri 09:00-17:00; Sat 10:00-14:00'"
+    )
+    capacity: int | None = Field(default=None, description="Location capacity/max occupants")
+    contact_person: str | None = Field(default=None, max_length=255)
+    contact_phone: str | None = Field(default=None, max_length=20)
+    contact_email: str | None = Field(default=None, max_length=255)
+    is_deleted: bool = Field(default=False, description="Soft delete flag")
     created_at: datetime = Field(default_factory=_now_utc)
     updated_at: datetime = Field(default_factory=_now_utc)
 
