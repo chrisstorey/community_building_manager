@@ -87,8 +87,10 @@ def create_loc(
             status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
         )
 
-    location.organization_id = org_id
-    return create_location(db, location)
+    location_data = location.model_dump()
+    location_data['organization_id'] = org_id
+    location_updated = LocationCreate(**location_data)
+    return create_location(db, location_updated)
 
 
 @router.get("/{org_id}/locations", response_model=list[LocationResponse])

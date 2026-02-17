@@ -31,9 +31,12 @@
 
         try {
             const userOrgId = await getCurrentUserOrgId();
-            const response = await fetch(`/work-items?organization_id=${userOrgId}`, {
+            const response = await fetch(`/work/outstanding?organization_id=${userOrgId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            if (!response.ok) {
+                throw new Error('Failed to load work items');
+            }
             const items = await response.json();
             displayWorkItems(items);
         } catch (error) {

@@ -1,5 +1,5 @@
 """Work items and work areas routes"""
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import Session
 
 from app.db import get_session
@@ -19,6 +19,7 @@ from app.services.work_service import (
     get_work_item_by_id,
     add_update_to_item,
     get_updates_for_item,
+    get_outstanding_items,
 )
 
 router = APIRouter(prefix="/work", tags=["work-items"])
@@ -136,3 +137,14 @@ def list_item_updates(
 
     updates = get_updates_for_item(db, item_id)
     return updates
+
+
+@router.get("/outstanding", response_model=list[WorkItemResponse])
+def list_outstanding_items(
+    organization_id: int = Query(..., description="Organization ID"),
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Get outstanding work items for an organization"""
+    items = get_outstanding_items(db, organization_id)
+    return items

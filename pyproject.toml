@@ -2,7 +2,7 @@
 name = "community-building-manager"
 version = "0.1.0"
 description = "Service for managing community buildings and activities"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.34.0",

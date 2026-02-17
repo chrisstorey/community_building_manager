@@ -255,6 +255,7 @@ def update_location(
 
     update_data = location_update.model_dump(exclude_unset=True)
     db_location.sqlmodel_update(update_data)
+    db_location.updated_at = _now_utc()
 
     db.add(db_location)
     db.commit()
@@ -301,6 +302,7 @@ def delete_location(db: Session, location_id: int) -> bool:
         return False
 
     db_location.is_deleted = True
+    db_location.updated_at = _now_utc()
     db.add(db_location)
     db.commit()
     return True
