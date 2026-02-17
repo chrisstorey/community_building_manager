@@ -162,14 +162,16 @@ def test_initialize_default_asset_types(client, auth_token):
     assert response.status_code == status.HTTP_201_CREATED
     data = response.json()
 
-    # Should have 4 default asset types
-    assert len(data) == 4
+    # Should have 6 default asset types
+    assert len(data) == 6
 
     # Check for specific asset types
     names = [asset["name"] for asset in data]
     assert "Scout HQ" in names
+    assert "Scout Campsite" in names
     assert "Church" in names
     assert "Church Hall" in names
+    assert "Community Building" in names
     assert "Scout Activity Centre" in names
 
 
@@ -192,7 +194,7 @@ def test_initialize_default_asset_types_idempotent(client, auth_token):
     count2 = len(response2.json())
 
     # Should return the same count (no duplicates)
-    assert count1 == count2 == 4
+    assert count1 == count2 == 6
 
 
 def test_scout_hq_template_has_maintenance_areas(client, auth_token):
@@ -257,6 +259,40 @@ def test_scout_activity_centre_template_has_maintenance_areas(client, auth_token
 
     centre = next(asset for asset in data if asset["name"] == "Scout Activity Centre")
     template = centre["template"]
+
+    # Check for expected maintenance areas
+    assert "## Area:" in template
+    assert "- " in template  # Should have tasks listed
+
+
+def test_scout_campsite_template_has_maintenance_areas(client, auth_token):
+    """Test that Scout Campsite default template has maintenance areas"""
+    response = client.post(
+        "/asset-types/initialize-defaults",
+        headers={"Authorization": f"Bearer {auth_token}"}
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    data = response.json()
+
+    campsite = next(asset for asset in data if asset["name"] == "Scout Campsite")
+    template = campsite["template"]
+
+    # Check for expected maintenance areas
+    assert "## Area:" in template
+    assert "- " in template  # Should have tasks listed
+
+
+def test_community_building_template_has_maintenance_areas(client, auth_token):
+    """Test that Community Building default template has maintenance areas"""
+    response = client.post(
+        "/asset-types/initialize-defaults",
+        headers={"Authorization": f"Bearer {auth_token}"}
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    data = response.json()
+
+    community = next(asset for asset in data if asset["name"] == "Community Building")
+    template = community["template"]
 
     # Check for expected maintenance areas
     assert "## Area:" in template

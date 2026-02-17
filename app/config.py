@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     app_name: str = "Community Building Manager"
     app_env: str = "development"
     debug: bool = True
-    secret_key: str = "change-this-in-production"
+    secret_key: str = "change-this-secret-key-in-production-env"
 
     # Database
     database_url: str = "sqlite:///./community_manager.db"

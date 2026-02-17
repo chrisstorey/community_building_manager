@@ -177,7 +177,99 @@ DEFAULT_ASSET_TYPES = {
 - Check emergency exits
 - Test emergency lighting
 - Verify first aid kits
-- Check security locks"""
+- Check security locks""",
+
+    "Scout Campsite": """## Area: Site Grounds
+- Inspect camping pitches for hazards
+- Check ground drainage
+- Clear overhanging branches
+- Inspect boundary fencing
+
+## Area: Toilet and Shower Facilities
+- Clean and disinfect all facilities
+- Check plumbing for leaks
+- Inspect hot water system
+- Check ventilation and lighting
+
+## Area: Cooking Facilities
+- Inspect camp kitchen equipment
+- Check gas connections and appliances
+- Clean grease traps and drainage
+- Inspect fire suppression equipment
+
+## Area: Water Supply
+- Test water quality
+- Inspect storage tanks
+- Check pumping equipment
+- Inspect distribution pipework
+
+## Area: Electrical Supply
+- Test all power hookup points
+- Inspect distribution board
+- Test residual current devices
+- Check outdoor lighting
+
+## Area: Structures and Buildings
+- Inspect huts and shelters for damage
+- Check roof condition on all buildings
+- Inspect doors and windows
+- Check foundations for subsidence
+
+## Area: Safety and Emergency
+- Inspect fire pits and BBQ areas
+- Check first aid provisions
+- Inspect emergency access routes
+- Test emergency communication equipment
+- Check fire extinguishers""",
+
+    "Community Building": """## Area: Roof and Exterior
+- Inspect roof for leaks and damage
+- Check gutters and downspouts
+- Inspect external cladding
+- Check signage and accessibility
+
+## Area: Main Hall
+- Inspect flooring condition
+- Check ceiling and walls
+- Test all lighting
+- Inspect acoustic panels
+
+## Area: Meeting Rooms
+- Check flooring and furnishings
+- Inspect windows and blinds
+- Test heating and ventilation
+- Check AV equipment
+
+## Area: Kitchen and Catering
+- Clean and sanitize all surfaces
+- Check appliances and equipment
+- Inspect plumbing
+- Check refrigeration temperatures
+
+## Area: Toilets and Accessible Facilities
+- Clean and disinfect
+- Check all plumbing fixtures
+- Inspect accessible toilet facilities
+- Replenish consumables
+
+## Area: HVAC System
+- Replace air filters
+- Service boiler/heat pump
+- Check temperature controls
+- Inspect ventilation ducts
+
+## Area: Electrical Systems
+- Test emergency lighting
+- Inspect distribution board
+- Check all outlets and switches
+- Test fire alarm and emergency systems
+
+## Area: Accessibility and Safety
+- Inspect ramps and handrails
+- Check hearing loop system
+- Test fire alarm and extinguishers
+- Inspect emergency exits and signage
+- Check CCTV and security systems"""
 }
 
 

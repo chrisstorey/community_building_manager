@@ -65,43 +65,43 @@ app.include_router(dashboard_router)
 @app.get("/login")
 def login_page(request: Request):
     """Serve login page"""
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request, "login.html")
 
 
 @app.get("/register")
 def register_page(request: Request):
     """Serve registration page"""
-    return templates.TemplateResponse("register.html", {"request": request})
+    return templates.TemplateResponse(request, "register.html")
 
 
 @app.get("/dashboard")
 def dashboard_page(request: Request):
     """Serve dashboard page"""
-    return templates.TemplateResponse("dashboard.html", {"request": request})
+    return templates.TemplateResponse(request, "dashboard.html")
 
 
 @app.get("/locations")
 def locations_page(request: Request):
     """Serve locations page"""
-    return templates.TemplateResponse("locations.html", {"request": request})
+    return templates.TemplateResponse(request, "locations.html")
 
 
 @app.get("/assets")
 def assets_page(request: Request):
     """Serve assets page"""
-    return templates.TemplateResponse("assets.html", {"request": request})
+    return templates.TemplateResponse(request, "assets.html")
 
 
 @app.get("/work-items")
 def work_items_page(request: Request):
     """Serve work items page"""
-    return templates.TemplateResponse("work-items.html", {"request": request})
+    return templates.TemplateResponse(request, "work-items.html")
 
 
 @app.get("/settings")
 def settings_page(request: Request):
     """Serve settings page"""
-    return templates.TemplateResponse("settings.html", {"request": request})
+    return templates.TemplateResponse(request, "settings.html")
 
 
 @app.get("/health")
@@ -113,7 +113,7 @@ def health_check():
 @app.get("/")
 def root(request: Request):
     """Root endpoint - redirect to login or dashboard"""
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request, "login.html")
 
 
 if __name__ == "__main__":
