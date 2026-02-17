@@ -21,8 +21,12 @@ from app.services.organization_service import (
     get_location_by_id,
     get_locations_for_organization,
     update_location,
+    delete_location,
+    search_locations,
     get_location_type_by_id,
     add_asset_to_location,
+    get_location_assets,
+    remove_asset_from_location,
 )
 
 router = APIRouter(prefix="/organizations", tags=["organizations"])
@@ -136,6 +140,39 @@ def update_loc(
     return location
 
 
+@router.delete("/locations/{location_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_loc(
+    location_id: int,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_manager_user),
+):
+    """Delete (soft delete) a location"""
+    location = get_location_by_id(db, location_id)
+    if not location:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Location not found"
+        )
+
+    delete_location(db, location_id)
+    return None
+
+
+@router.get("/locations/search", response_model=list[LocationResponse])
+def search_loc(
+    q: str | None = Query(None, description="Search query"),
+    org_id: int | None = Query(None, description="Filter by organization"),
+    status_filter: str | None = Query(None, description="Filter by status"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Search locations by name, address, or filter by organization and status"""
+    return search_locations(
+        db, org_id=org_id, query=q, status=status_filter, skip=skip, limit=limit
+    )
+
+
 @router.post(
     "/locations/{location_id}/assets/{asset_type_id}",
     status_code=status.HTTP_201_CREATED,
@@ -160,3 +197,46 @@ def add_asset(
         )
 
     return add_asset_to_location(db, location_id, asset_type_id)
+
+
+@router.get("/locations/{location_id}/assets")
+def get_assets(
+    location_id: int,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    """Get all assets for a location"""
+    location = get_location_by_id(db, location_id)
+    if not location:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Location not found"
+        )
+
+    assets = get_location_assets(db, location_id)
+    return assets
+
+
+@router.delete(
+    "/locations/{location_id}/assets/{asset_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def remove_asset(
+    location_id: int,
+    asset_id: int,
+    db: Session = Depends(get_session),
+    current_user: User = Depends(get_manager_user),
+):
+    """Remove an asset from a location"""
+    location = get_location_by_id(db, location_id)
+    if not location:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Location not found"
+        )
+
+    success = remove_asset_from_location(db, location_id, asset_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Asset not found"
+        )
+
+    return None

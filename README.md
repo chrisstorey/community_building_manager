@@ -141,9 +141,65 @@ Interactive API documentation is available at:
   }
   ```
 
+### Locations Management
+
+**Location Features:**
+- Create and manage multiple locations for your organization
+- Track location details including:
+  - Address and GPS coordinates (latitude/longitude)
+  - Operating hours
+  - Capacity information
+  - Contact person, phone, and email
+  - Status (active, inactive, under_maintenance)
+- Search locations by name or address
+- Filter locations by status
+- Soft delete locations (non-destructive)
+
+**API Endpoints:**
+```bash
+# Create location
+POST /organizations/{org_id}/locations
+{
+  "name": "Scout HQ",
+  "address": "123 Main St",
+  "latitude": 51.5074,
+  "longitude": -0.1278,
+  "status": "active",
+  "opening_hours": "Mon-Fri 09:00-17:00",
+  "capacity": 100,
+  "contact_person": "John Doe",
+  "contact_phone": "555-1234",
+  "contact_email": "john@example.com"
+}
+
+# List locations for organization
+GET /organizations/{org_id}/locations
+
+# Get location details
+GET /organizations/locations/{location_id}
+
+# Update location
+PATCH /organizations/locations/{location_id}
+
+# Delete location (soft delete)
+DELETE /organizations/locations/{location_id}
+
+# Search locations
+GET /organizations/locations/search?q=scout&status_filter=active
+```
+
+**UI:** Access locations management at http://localhost:8000/locations
+
 ### Asset Types and Work Items
 
-Assets are defined with markdown templates that structure maintenance work:
+Asset types are defined with markdown templates that structure maintenance work. The system includes predefined asset types for scout organizations:
+
+- **Scout HQ** - Scout headquarters building
+- **Church** - Church building
+- **Church Hall** - Church hall/community center
+- **Scout Activity Centre** - Scout activity and training centre
+
+Each asset type includes maintenance templates with organized areas and checklist items:
 
 ```markdown
 ## Area: Roof
@@ -158,6 +214,37 @@ Assets are defined with markdown templates that structure maintenance work:
 ```
 
 When an asset is added to a location, work areas and items are automatically generated from the template.
+
+**API Endpoints:**
+```bash
+# Create asset type
+POST /asset-types
+{
+  "name": "Custom Building",
+  "description": "Description of the building type",
+  "template": "## Area: Section1\n- Task 1\n- Task 2"
+}
+
+# Initialize default scout asset types
+POST /asset-types/initialize-defaults
+
+# List asset types
+GET /asset-types
+
+# Get asset type details
+GET /asset-types/{asset_type_id}
+
+# Add asset to location
+POST /organizations/locations/{location_id}/assets/{asset_type_id}
+
+# Get location assets
+GET /organizations/locations/{location_id}/assets
+
+# Remove asset from location
+DELETE /organizations/locations/{location_id}/assets/{asset_id}
+```
+
+**UI:** Access asset management at http://localhost:8000/assets
 
 ### Dashboard
 

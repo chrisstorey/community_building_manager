@@ -86,6 +86,12 @@ def locations_page(request: Request):
     return templates.TemplateResponse("locations.html", {"request": request})
 
 
+@app.get("/assets")
+def assets_page(request: Request):
+    """Serve assets page"""
+    return templates.TemplateResponse("assets.html", {"request": request})
+
+
 @app.get("/work-items")
 def work_items_page(request: Request):
     """Serve work items page"""

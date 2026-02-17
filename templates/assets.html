@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Assets - Community Building Manager{% endblock %}
+
+{% block content %}
+<div class="assets-container">
+    <h1>Asset Types</h1>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <p style="color: var(--text-light); margin: 0;">Manage building asset types and maintenance templates</p>
+        </div>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <button class="btn btn-action" id="init-defaults-btn">Initialize Scout Asset Types</button>
+            <button class="btn btn-action" id="add-asset-btn">+ Add Asset Type</button>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Asset Types</h3>
+        </div>
+        <div id="assets-list">
+            <p style="text-align: center; color: var(--text-light);">Loading asset types...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Asset Type Modal -->
+<div id="asset-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 8px; max-width: 700px; width: 90%; max-height: 90vh; overflow-y: auto;">
+        <h2 id="modal-title">Add Asset Type</h2>
+        <form id="asset-form">
+            <div style="margin-bottom: 1rem;">
+                <label for="asset-name">Name *</label>
+                <input type="text" id="asset-name" required style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;">
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="asset-description">Description</label>
+                <textarea id="asset-description" rows="3" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label for="asset-template">Markdown Template *</label>
+                <textarea id="asset-template" required rows="15" placeholder="## Area: Name&#10;- Task 1&#10;- Task 2" style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-family: monospace; font-size: 0.9rem;"></textarea>
+                <small style="color: var(--text-light);">Use markdown format with ## Area: name sections and - task items for maintenance checklists</small>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="submit" class="btn btn-action">Save Asset Type</button>
+                <button type="button" class="btn btn-outline" onclick="closeAssetModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Asset Details Modal -->
+<div id="asset-details-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 8px; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto;">
+        <h2 id="details-title">Asset Type Details</h2>
+        <div id="asset-details-content"></div>
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button class="btn btn-action" id="edit-asset-btn">Edit</button>
+            <button class="btn btn-outline" onclick="closeDetailsModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentAssetId = null;
+
+    async function loadAssetTypes() {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            window.location.href = '/login';
+            return;
+        }
+
+        try {
+            const response = await fetch('/asset-types', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const assets = await response.json();
+            displayAssets(assets);
+        } catch (error) {
+            console.error('Error loading asset types:', error);
+            document.getElementById('assets-list').innerHTML = `<div class="alert alert-danger">Error loading asset types. Please refresh the page.</div>`;
+        }
+    }
+
+    function displayAssets(assets) {
+        const container = document.getElementById('assets-list');
+        if (assets.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: var(--text-light);">No asset types yet. Click "Add Asset Type" or "Initialize Scout Asset Types" to get started.</p>';
+            return;
+        }
+
+        let html = '<table class="table">';
+        html += '<thead><tr><th>Name</th><th>Description</th><th>Template Areas</th><th>Actions</th></tr></thead><tbody>';
+        assets.forEach(asset => {
+            const areas = (asset.template.match(/## Area:/g) || []).length;
+            html += `<tr>
+                <td><strong>${asset.name}</strong></td>
+                <td>${asset.description || 'N/A'}</td>
+                <td><span style="background-color: var(--primary); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">${areas} areas</span></td>
+                <td>
+                    <button class="btn btn-outline" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;" onclick="viewAssetDetails(${asset.id})">View</button>
+                    <button class="btn btn-outline" style="font-size: 0.85rem; padding: 0.25rem 0.5rem;" onclick="editAsset(${asset.id})">Edit</button>
+                </td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    async function viewAssetDetails(assetId) {
+        const token = localStorage.getItem('access_token');
+        try {
+            const response = await fetch(`/asset-types/${assetId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const asset = await response.json();
+            currentAssetId = asset.id;
+
+            let detailsHtml = `
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="margin-bottom: 1rem;">
+                        <h4>Name</h4>
+                        <p>${asset.name}</p>
+                    </div>
+                    ${asset.description ? `<div style="margin-bottom: 1rem;">
+                        <h4>Description</h4>
+                        <p>${asset.description}</p>
+                    </div>` : ''}
+                    <div style="margin-bottom: 1rem;">
+                        <h4>Maintenance Template</h4>
+                        <pre style="background-color: #f5f5f5; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.9rem;">${asset.template}</pre>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('asset-details-content').innerHTML = detailsHtml;
+            document.getElementById('details-title').textContent = asset.name;
+            document.getElementById('asset-details-modal').style.display = 'block';
+        } catch (error) {
+            console.error('Error loading asset details:', error);
+            alert('Error loading asset details');
+        }
+    }
+
+    async function editAsset(assetId) {
+        const token = localStorage.getItem('access_token');
+        try {
+            const response = await fetch(`/asset-types/${assetId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const asset = await response.json();
+            currentAssetId = asset.id;
+
+            document.getElementById('modal-title').textContent = 'Edit Asset Type';
+            document.getElementById('asset-name').value = asset.name;
+            document.getElementById('asset-description').value = asset.description || '';
+            document.getElementById('asset-template').value = asset.template;
+
+            closeDetailsModal();
+            document.getElementById('asset-modal').style.display = 'block';
+        } catch (error) {
+            console.error('Error loading asset:', error);
+            alert('Error loading asset');
+        }
+    }
+
+    async function saveAsset(e) {
+        e.preventDefault();
+        const token = localStorage.getItem('access_token');
+
+        const assetData = {
+            name: document.getElementById('asset-name').value,
+            description: document.getElementById('asset-description').value || null,
+            template: document.getElementById('asset-template').value,
+        };
+
+        try {
+            const method = currentAssetId ? 'PATCH' : 'POST';
+            const url = currentAssetId
+                ? `/asset-types/${currentAssetId}`
+                : '/asset-types';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(assetData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save asset type');
+            }
+
+            closeAssetModal();
+            await loadAssetTypes();
+            alert('Asset type saved successfully!');
+        } catch (error) {
+            console.error('Error saving asset type:', error);
+            alert('Error saving asset type: ' + error.message);
+        }
+    }
+
+    async function initializeDefaults() {
+        const token = localStorage.getItem('access_token');
+        if (!confirm('This will create default asset types for Scout organizations. Continue?')) return;
+
+        try {
+            const response = await fetch('/asset-types/initialize-defaults', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to initialize asset types');
+            }
+
+            await loadAssetTypes();
+            alert('Scout asset types initialized successfully!');
+        } catch (error) {
+            console.error('Error initializing asset types:', error);
+            alert('Error initializing asset types: ' + error.message);
+        }
+    }
+
+    function closeAssetModal() {
+        document.getElementById('asset-modal').style.display = 'none';
+        document.getElementById('modal-title').textContent = 'Add Asset Type';
+        document.getElementById('asset-form').reset();
+        currentAssetId = null;
+    }
+
+    function closeDetailsModal() {
+        document.getElementById('asset-details-modal').style.display = 'none';
+        currentAssetId = null;
+    }
+
+    // Event listeners
+    document.getElementById('add-asset-btn').addEventListener('click', () => {
+        currentAssetId = null;
+        document.getElementById('asset-form').reset();
+        document.getElementById('modal-title').textContent = 'Add Asset Type';
+        document.getElementById('asset-modal').style.display = 'block';
+    });
+
+    document.getElementById('init-defaults-btn').addEventListener('click', initializeDefaults);
+
+    document.getElementById('asset-form').addEventListener('submit', saveAsset);
+
+    window.addEventListener('load', loadAssetTypes);
+</script>
+{% endblock %}
